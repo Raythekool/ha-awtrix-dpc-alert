@@ -1,0 +1,214 @@
+blueprint:
+  name: "AWTRIX Protezione Civile Alert 🇮🇹"
+  description: "Mostra gli alert meteo della Protezione Civile sul tuo dispositivo AWTRIX.\n\n
+    ## ⚠️ REQUISITI ⚠️\n
+    Devi avere installato l'integrazione [DPC Alert](https://github.com/caiosweet/Home-Assistant-custom-components-DPC-Alert).\n\n
+    ## 📦 ICONE CONSIGLIATE\n
+    Ti consiglio di caricare queste icone sul tuo AWTRIX:\n
+    - `dpc-idraulico` - Rischio idraulico (alluvioni)\n
+    - `dpc-temporali` - Rischio temporali\n
+    - `dpc-idrogeologico` - Rischio idrogeologico (frane)\n
+    - `dpc-warning` - Icona generica alert\n\n
+    Puoi usare icone da [https://developer.lametric.com/icons](https://developer.lametric.com/icons) o crearne di personalizzate.\n\n
+    Aggiornamenti: https://github.com/tuorepository/blueprints/awtrix_dpc_alert.yaml"
+  domain: automation
+  input:
+    awtrix:
+      name: Dispositivo AWTRIX
+      description: Seleziona il tuo dispositivo AWTRIX
+      selector:
+        device:
+          integration: mqtt
+          manufacturer: Blueforcer
+          model: AWTRIX 3
+          multiple: true
+    
+    dpc_sensors:
+      name: Sensori DPC Alert
+      description: Seleziona i sensori di allerta che vuoi monitorare
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+              integration: dpc
+          multiple: true
+    
+    warning_level:
+      name: Livello minimo di allerta
+      description: |
+        0 = Mostra tutte le allerte (anche assenza criticità)
+        1 = Verde (Ordinaria criticità)
+        2 = Giallo (Moderata criticità)
+        3 = Arancione (Criticità elevata)
+        4 = Rosso (Criticità estrema)
+      selector:
+        number:
+          min: 0
+          max: 4
+          mode: box
+          step: 1
+      default: 1
+    
+    message_duration:
+      name: Durata messaggio ⏱️
+      description: Quanto tempo deve rimanere il messaggio sullo schermo (in secondi). 0 = usa il tempo globale
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: sec
+          step: 1
+          mode: slider
+      default: 20
+    
+    icon_idraulico:
+      name: Icona Rischio Idraulico
+      description: "Icona per il rischio idraulico (alluvioni, esondazioni)\n
+        ![flood](https://developer.lametric.com/content/apps/icon_thumbs/17055_icon_thumb.gif?v=1)"
+      selector:
+        text: {}
+      default: "49300"
+    
+    icon_temporali:
+      name: Icona Rischio Temporali
+      description: "Icona per il rischio temporali\n
+        ![lightning](https://developer.lametric.com/content/apps/icon_thumbs/49299_icon_thumb.gif?v=4)"
+      selector:
+        text: {}
+      default: "49299"
+    
+    icon_idrogeologico:
+      name: Icona Rischio Idrogeologico
+      description: "Icona per il rischio idrogeologico (frane, smottamenti)\n
+        ![waves](https://developer.lametric.com/content/apps/icon_thumbs/2289_icon_thumb.gif?v=1)"
+      selector:
+        text: {}
+      default: "2289"
+    
+    icon_warning:
+      name: Icona Alert Generica
+      description: "Icona generica per altri tipi di alert\n
+        ![warning](https://developer.lametric.com/content/apps/icon_thumbs/16754_icon_thumb.gif?v=1)"
+      selector:
+        text: {}
+      default: "16754"
+
+mode: restart
+
+variables:
+  device_ids: !input awtrix
+  app_topic: "dpc_alert"
+  devices_topics: |
+    {%- macro get_device_topic(device_id) %}
+      {{ states((device_entities(device_id) | select('search','device_topic') | list)[0]) }}
+    {%- endmacro %}
+    {%- set ns = namespace(devices=[]) %}
+    {%- for device_id in device_ids %}
+      {%- set device=get_device_topic(device_id)|replace('','') %}
+      {% set ns.devices = ns.devices + [ device ~ '/custom/' ~ app_topic] %}
+    {%- endfor %}
+    {{ ns.devices | reject('match','unavailable') | list }}
+  
+  dpc_sensors: !input dpc_sensors
+  warning_level: !input warning_level
+  message_duration: !input message_duration
+  icon_idraulico: !input icon_idraulico
+  icon_temporali: !input icon_temporali
+  icon_idrogeologico: !input icon_idrogeologico
+  icon_warning: !input icon_warning
+  
+  # Mappa colori per livelli di criticità
+  color_map: |
+    {{ dict({
+      0: "#4CAF50",
+      1: "#4CAF50",
+      2: "#FFEB3B",
+      3: "#FF9800",
+      4: "#F44336"
+    }) }}
+  
+  # Mappa nomi criticità
+  level_names: |
+    {{ dict({
+      0: "Nessuna",
+      1: "Ordinaria",
+      2: "Moderata",
+      3: "Elevata",
+      4: "Estrema"
+    }) }}
+  
+  # Costruisci payload con tutti gli alert attivi
+  alerts: |
+    {%- set ns = namespace(alerts=[]) %}
+    {%- for sensor in dpc_sensors %}
+      {%- if is_state(sensor, 'on') and state_attr(sensor, 'level')|int(0) >= warning_level %}
+        {%- set level = state_attr(sensor, 'level')|int(0) %}
+        {%- set alert = state_attr(sensor, 'alert') %}
+        {%- set risk = state_attr(sensor, 'risk') %}
+        {%- set zone = state_attr(sensor, 'zone_name') %}
+        {%- set expires = state_attr(sensor, 'expires') %}
+        
+        {%- set icon = icon_warning %}
+        {%- if 'idraulico' in risk|lower %}
+          {%- set icon = icon_idraulico %}
+        {%- elif 'temporali' in risk|lower %}
+          {%- set icon = icon_temporali %}
+        {%- elif 'idrogeologico' in risk|lower %}
+          {%- set icon = icon_idrogeologico %}
+        {%- endif %}
+        
+        {%- set alert_obj = {
+          'icon': icon,
+          'text': alert ~ ' - ' ~ zone,
+          'duration': message_duration,
+          'color': color_map[level],
+          'pushIcon': 2,
+          'repeat': 1
+        } %}
+        {%- set ns.alerts = ns.alerts + [alert_obj] %}
+      {%- endif %}
+    {%- endfor %}
+    {{ ns.alerts }}
+  
+  payload: |
+    {%- set alert_list = alerts %}
+    {%- if alert_list|length > 0 %}
+      {%- if alert_list|length == 1 %}
+        {{ alert_list[0]|tojson }}
+      {%- else %}
+        {{ alert_list|tojson }}
+      {%- endif %}
+    {%- else %}
+      {}
+    {%- endif %}
+
+trigger:
+  - platform: state
+    entity_id: !input dpc_sensors
+    id: alert_change
+
+condition: []
+
+action:
+  - repeat:
+      for_each: "{{ devices_topics }}"
+      sequence:
+        # Rimuovi app precedente
+        - service: mqtt.publish
+          data:
+            qos: 0
+            retain: false
+            topic: "{{ repeat.item }}"
+            payload: ""
+        
+        # Pubblica nuovi alert (se presenti)
+        - if:
+            - condition: template
+              value_template: "{{ alerts|length > 0 }}"
+          then:
+            - service: mqtt.publish
+              data:
+                qos: 0
+                retain: false
+                topic: "{{ repeat.item }}"
+                payload: "{{ payload }}"
