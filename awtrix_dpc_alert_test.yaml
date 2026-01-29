@@ -120,6 +120,7 @@ variables:
 
   color_map: |
     {{ dict({
+      0: "#2196F3",
       1: "#4CAF50",
       2: "#FFEB3B",
       3: "#FF9800",
