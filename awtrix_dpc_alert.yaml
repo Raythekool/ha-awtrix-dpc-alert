@@ -1,6 +1,7 @@
 blueprint:
   name: "AWTRIX Protezione Civile Alert 🇮🇹"
-  description: "Mostra gli alert meteo della Protezione Civile sul tuo dispositivo AWTRIX.\n\n
+  description:
+    "Mostra gli alert meteo della Protezione Civile sul tuo dispositivo AWTRIX.\n\n
     ## ⚠️ REQUISITI ⚠️\n
     Devi avere installato l'integrazione [DPC Alert](https://github.com/caiosweet/Home-Assistant-custom-components-DPC-Alert).\n\n
     ## 📦 ICONE CONSIGLIATE\n
@@ -22,7 +23,7 @@ blueprint:
           manufacturer: Blueforcer
           model: AWTRIX 3
           multiple: true
-    
+
     dpc_sensors:
       name: Sensori DPC Alert
       description: Seleziona i sensori di allerta che vuoi monitorare
@@ -32,7 +33,7 @@ blueprint:
             - domain: binary_sensor
               integration: dpc
           multiple: true
-    
+
     warning_level:
       name: Livello minimo di allerta
       description: |
@@ -48,7 +49,7 @@ blueprint:
           mode: box
           step: 1
       default: 1
-    
+
     message_duration:
       name: Durata messaggio ⏱️
       description: Quanto tempo deve rimanere il messaggio sullo schermo (in secondi). 0 = usa il tempo globale
@@ -60,7 +61,7 @@ blueprint:
           step: 1
           mode: slider
       default: 20
-    
+
     icon_idraulico:
       name: Icona Rischio Idraulico
       description: "Icona per il rischio idraulico (alluvioni, esondazioni)\n
@@ -68,7 +69,7 @@ blueprint:
       selector:
         text: {}
       default: "49300"
-    
+
     icon_temporali:
       name: Icona Rischio Temporali
       description: "Icona per il rischio temporali\n
@@ -76,7 +77,7 @@ blueprint:
       selector:
         text: {}
       default: "49299"
-    
+
     icon_idrogeologico:
       name: Icona Rischio Idrogeologico
       description: "Icona per il rischio idrogeologico (frane, smottamenti)\n
@@ -84,7 +85,7 @@ blueprint:
       selector:
         text: {}
       default: "2289"
-    
+
     icon_warning:
       name: Icona Alert Generica
       description: "Icona generica per altri tipi di alert\n
@@ -92,6 +93,39 @@ blueprint:
       selector:
         text: {}
       default: "16754"
+
+    enable_sound:
+      name: Abilita Suono 🔊
+      description: Riproduce un suono quando arriva un'allerta
+      selector:
+        boolean: {}
+      default: false
+
+    sound_level:
+      name: Livello minimo per suono
+      description: |
+        Riproduci suono solo per allerte di questo livello o superiore:
+        1 = Verde (Ordinaria)
+        2 = Giallo (Moderata)
+        3 = Arancione (Elevata)
+        4 = Rosso (Estrema)
+      selector:
+        number:
+          min: 1
+          max: 4
+          mode: box
+          step: 1
+      default: 3
+
+    sound_file:
+      name: File Suono
+      description: |
+        Nome del file audio da riprodurre (senza estensione).
+        Esempi: alarm, doorbell, notification, etc.
+        Vedi la documentazione AWTRIX per i suoni disponibili.
+      selector:
+        text: {}
+      default: "alarm"
 
 mode: restart
 
@@ -108,7 +142,7 @@ variables:
       {% set ns.devices = ns.devices + [ device ~ '/custom/' ~ app_topic] %}
     {%- endfor %}
     {{ ns.devices | reject('match','unavailable') | list }}
-  
+
   dpc_sensors: !input dpc_sensors
   warning_level: !input warning_level
   message_duration: !input message_duration
@@ -116,7 +150,10 @@ variables:
   icon_temporali: !input icon_temporali
   icon_idrogeologico: !input icon_idrogeologico
   icon_warning: !input icon_warning
-  
+  enable_sound: !input enable_sound
+  sound_level: !input sound_level
+  sound_file: !input sound_file
+
   # Mappa colori per livelli di criticità
   color_map: |
     {{ dict({
@@ -126,7 +163,7 @@ variables:
       3: "#FF9800",
       4: "#F44336"
     }) }}
-  
+
   # Mappa nomi criticità
   level_names: |
     {{ dict({
@@ -136,7 +173,7 @@ variables:
       3: "Elevata",
       4: "Estrema"
     }) }}
-  
+
   # Costruisci payload con tutti gli alert attivi
   alerts: |
     {%- set ns = namespace(alerts=[]) %}
@@ -165,11 +202,14 @@ variables:
           'pushIcon': 2,
           'repeat': 1
         } %}
+        {%- if enable_sound and level >= sound_level %}
+          {%- set _ = alert_obj.update({'sound': sound_file}) %}
+        {%- endif %}
         {%- set ns.alerts = ns.alerts + [alert_obj] %}
       {%- endif %}
     {%- endfor %}
     {{ ns.alerts }}
-  
+
   payload: |
     {%- set alert_list = alerts %}
     {%- if alert_list|length > 0 %}
@@ -200,7 +240,7 @@ action:
             retain: false
             topic: "{{ repeat.item }}"
             payload: ""
-        
+
         # Pubblica nuovi alert (se presenti)
         - if:
             - condition: template
