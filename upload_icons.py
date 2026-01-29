@@ -131,7 +131,7 @@ def upload_icon_to_awtrix(device_ip: str, icon_name: str, icon_data: bytes, file
     # Build the multipart body
     body = []
     body.append(f'--{boundary}'.encode())
-    body.append(f'Content-Disposition: form-data; name="data"; filename="/{safe_icon_name}.{file_ext}"'.encode())
+    body.append(f'Content-Disposition: form-data; name="data"; filename="/ICONS/{safe_icon_name}.{file_ext}"'.encode())
     body.append(f'Content-Type: image/{file_ext}'.encode())
     body.append(b'')
     body.append(icon_data)
