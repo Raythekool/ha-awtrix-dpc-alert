@@ -109,3 +109,4 @@ Questo progetto è distribuito sotto licenza MIT. Vedi il file `LICENSE` per mag
 
 - Integrazione DPC Alert: [caiosweet](https://github.com/caiosweet/Home-Assistant-custom-components-DPC-Alert)
 - AWTRIX 3: [Blueforcer](https://github.com/Blueforcer/awtrix3)
+- Ispirazione dal flow: [Blueforcer Flow](https://flows.blueforcer.de/flow/rM3xOBxvA8Lz#)
