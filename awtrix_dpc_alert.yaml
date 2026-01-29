@@ -10,7 +10,7 @@ blueprint:
     - `dpc-idrogeologico` - Rischio idrogeologico (frane)\n
     - `dpc-warning` - Icona generica alert\n\n
     Puoi usare icone da [https://developer.lametric.com/icons](https://developer.lametric.com/icons) o crearne di personalizzate.\n\n
-    Aggiornamenti: https://github.com/tuorepository/blueprints/awtrix_dpc_alert.yaml"
+    Aggiornamenti: https://github.com/Raythekool/awtrix_dpc_alert/blob/main/awtrix_dpc_alert.yaml"
   domain: automation
   input:
     awtrix:
@@ -125,16 +125,6 @@ variables:
       2: "#FFEB3B",
       3: "#FF9800",
       4: "#F44336"
-    }) }}
-  
-  # Mappa nomi criticità
-  level_names: |
-    {{ dict({
-      0: "Nessuna",
-      1: "Ordinaria",
-      2: "Moderata",
-      3: "Elevata",
-      4: "Estrema"
     }) }}
   
   # Costruisci payload con tutti gli alert attivi
