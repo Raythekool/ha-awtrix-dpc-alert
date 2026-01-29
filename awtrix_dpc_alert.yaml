@@ -128,20 +128,11 @@ blueprint:
       default: "alarm"
 
     enable_notification:
-      name: Enable Home Assistant Notification 🔔
-      description: Send a Home Assistant notification when alerts are triggered
+      name: Send AWTRIX Notification 🔔
+      description: Send a temporary notification to AWTRIX in addition to the custom app
       selector:
         boolean: {}
       default: false
-
-    notification_service:
-      name: Notification Service
-      description: |
-        Home Assistant notification service to use.
-        Examples: notify.mobile_app_<device>, notify.persistent_notification, etc.
-      selector:
-        text: {}
-      default: "notify.persistent_notification"
 
 mode: restart
 
@@ -159,6 +150,17 @@ variables:
     {%- endfor %}
     {{ ns.devices | reject('match','unavailable') | list }}
 
+  notify_topics: |
+    {%- macro get_device_topic(device_id) %}
+      {{ states((device_entities(device_id) | select('search','device_topic') | list)[0]) }}
+    {%- endmacro %}
+    {%- set ns = namespace(devices=[]) %}
+    {%- for device_id in device_ids %}
+      {%- set device=get_device_topic(device_id)|replace('','') %}
+      {% set ns.devices = ns.devices + [ device ~ '/notify'] %}
+    {%- endfor %}
+    {{ ns.devices | reject('match','unavailable') | list }}
+
   dpc_sensors: !input dpc_sensors
   warning_level: !input warning_level
   message_duration: !input message_duration
@@ -170,7 +172,6 @@ variables:
   sound_level: !input sound_level
   sound_file: !input sound_file
   enable_notification: !input enable_notification
-  notification_service: !input notification_service
 
   # Color map for criticality levels
   color_map: |
@@ -271,17 +272,17 @@ action:
                 topic: "{{ repeat.item }}"
                 payload: "{{ payload }}"
 
-  # Send Home Assistant notification if enabled
+  # Send AWTRIX notification if enabled
   - if:
       - condition: template
         value_template: "{{ enable_notification and alerts|length > 0 }}"
     then:
-      - service: "{{ notification_service }}"
-        data:
-          title: "DPC Alert - Civil Protection Warning"
-          message: |
-            {%- set alert_list = alerts %}
-            {{ alert_list|length }} active alert(s):
-            {%- for alert in alert_list %}
-            - {{ alert.text }}
-            {%- endfor %}
+      - repeat:
+          for_each: "{{ notify_topics }}"
+          sequence:
+            - service: mqtt.publish
+              data:
+                qos: 0
+                retain: false
+                topic: "{{ repeat.item }}"
+                payload: "{{ payload }}"

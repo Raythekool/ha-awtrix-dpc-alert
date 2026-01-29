@@ -67,20 +67,11 @@ blueprint:
       default: "alarm"
 
     enable_notification:
-      name: Send Home Assistant Notification 🔔
-      description: Send a Home Assistant notification with the test
+      name: Send AWTRIX Notification 🔔
+      description: Send as a temporary notification instead of custom app
       selector:
         boolean: {}
       default: false
-
-    notification_service:
-      name: Notification Service
-      description: |
-        Home Assistant notification service to use.
-        Examples: notify.mobile_app_<device>, notify.persistent_notification, etc.
-      selector:
-        text: {}
-      default: "notify.persistent_notification"
 
 mode: single
 
@@ -93,7 +84,6 @@ variables:
   enable_sound: !input enable_sound
   sound_file: !input sound_file
   enable_notification: !input enable_notification
-  notification_service: !input notification_service
 
   devices_topics: |
     {%- macro get_device_topic(device_id) %}
@@ -102,7 +92,11 @@ variables:
     {%- set ns = namespace(devices=[]) %}
     {%- for device_id in device_ids %}
       {%- set device=get_device_topic(device_id)|replace('','') %}
-      {% set ns.devices = ns.devices + [ device ~ '/custom/' ~ app_topic] %}
+      {%- if enable_notification %}
+        {% set ns.devices = ns.devices + [ device ~ '/notify'] %}
+      {%- else %}
+        {% set ns.devices = ns.devices + [ device ~ '/custom/' ~ app_topic] %}
+      {%- endif %}
     {%- endfor %}
     {{ ns.devices | reject('match','unavailable') | list }}
 
@@ -155,13 +149,3 @@ action:
     data:
       message: "DPC Alert test notification sent to {{ devices_topics|length }} AWTRIX device(s) - Level {{ test_level }}"
       level: info
-
-  # Send Home Assistant notification if enabled
-  - if:
-      - condition: template
-        value_template: "{{ enable_notification }}"
-    then:
-      - service: "{{ notification_service }}"
-        data:
-          title: "DPC Alert Test"
-          message: "Test notification sent to {{ devices_topics|length }} AWTRIX device(s) with criticality level {{ test_level }} ({{ level_names[test_level] }})"
