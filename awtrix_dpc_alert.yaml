@@ -127,12 +127,23 @@ blueprint:
         text: {}
       default: "alarm"
 
-    enable_notification:
-      name: Send AWTRIX Notification 🔔
-      description: Send a temporary notification to AWTRIX in addition to the custom app
+    display_mode:
+      name: Display Mode 📺
+      description: |
+        Choose how to display alerts on AWTRIX:
+        - Custom App: Persistent display until cleared
+        - Notification: Temporary pop-up that auto-dismisses
+        - Both: Send both custom app and notification
       selector:
-        boolean: {}
-      default: false
+        select:
+          options:
+            - label: "Custom App (Persistent)"
+              value: "app"
+            - label: "Notification (Temporary)"
+              value: "notification"
+            - label: "Both"
+              value: "both"
+      default: "app"
 
 mode: restart
 
@@ -171,7 +182,7 @@ variables:
   enable_sound: !input enable_sound
   sound_level: !input sound_level
   sound_file: !input sound_file
-  enable_notification: !input enable_notification
+  display_mode: !input display_mode
 
   # Color map for criticality levels
   color_map: |
@@ -249,33 +260,38 @@ trigger:
 condition: []
 
 action:
-  - repeat:
-      for_each: "{{ devices_topics }}"
-      sequence:
-        # Remove previous app
-        - service: mqtt.publish
-          data:
-            qos: 0
-            retain: false
-            topic: "{{ repeat.item }}"
-            payload: ""
-
-        # Publish new alerts (if present)
-        - if:
-            - condition: template
-              value_template: "{{ alerts|length > 0 }}"
-          then:
+  # Send to custom app if mode is 'app' or 'both'
+  - if:
+      - condition: template
+        value_template: "{{ display_mode in ['app', 'both'] }}"
+    then:
+      - repeat:
+          for_each: "{{ devices_topics }}"
+          sequence:
+            # Remove previous app
             - service: mqtt.publish
               data:
                 qos: 0
                 retain: false
                 topic: "{{ repeat.item }}"
-                payload: "{{ payload }}"
+                payload: ""
 
-  # Send AWTRIX notification if enabled
+            # Publish new alerts (if present)
+            - if:
+                - condition: template
+                  value_template: "{{ alerts|length > 0 }}"
+              then:
+                - service: mqtt.publish
+                  data:
+                    qos: 0
+                    retain: false
+                    topic: "{{ repeat.item }}"
+                    payload: "{{ payload }}"
+
+  # Send AWTRIX notification if mode is 'notification' or 'both'
   - if:
       - condition: template
-        value_template: "{{ enable_notification and alerts|length > 0 }}"
+        value_template: "{{ display_mode in ['notification', 'both'] and alerts|length > 0 }}"
     then:
       - repeat:
           for_each: "{{ notify_topics }}"

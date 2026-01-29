@@ -66,12 +66,23 @@ blueprint:
         text: {}
       default: "alarm"
 
-    enable_notification:
-      name: Send AWTRIX Notification 🔔
-      description: Send as a temporary notification instead of custom app
+    display_mode:
+      name: Display Mode 📺
+      description: |
+        Choose how to display the test on AWTRIX:
+        - Custom App: Persistent display until cleared
+        - Notification: Temporary pop-up that auto-dismisses
+        - Both: Send both custom app and notification
       selector:
-        boolean: {}
-      default: false
+        select:
+          options:
+            - label: "Custom App (Persistent)"
+              value: "app"
+            - label: "Notification (Temporary)"
+              value: "notification"
+            - label: "Both"
+              value: "both"
+      default: "notification"
 
 mode: single
 
@@ -83,7 +94,7 @@ variables:
   icon_test: !input icon_test
   enable_sound: !input enable_sound
   sound_file: !input sound_file
-  enable_notification: !input enable_notification
+  display_mode: !input display_mode
 
   devices_topics: |
     {%- macro get_device_topic(device_id) %}
@@ -92,11 +103,18 @@ variables:
     {%- set ns = namespace(devices=[]) %}
     {%- for device_id in device_ids %}
       {%- set device=get_device_topic(device_id)|replace('','') %}
-      {%- if enable_notification %}
-        {% set ns.devices = ns.devices + [ device ~ '/notify'] %}
-      {%- else %}
-        {% set ns.devices = ns.devices + [ device ~ '/custom/' ~ app_topic] %}
-      {%- endif %}
+      {% set ns.devices = ns.devices + [ device ~ '/custom/' ~ app_topic] %}
+    {%- endfor %}
+    {{ ns.devices | reject('match','unavailable') | list }}
+
+  notify_topics: |
+    {%- macro get_device_topic(device_id) %}
+      {{ states((device_entities(device_id) | select('search','device_topic') | list)[0]) }}
+    {%- endmacro %}
+    {%- set ns = namespace(devices=[]) %}
+    {%- for device_id in device_ids %}
+      {%- set device=get_device_topic(device_id)|replace('','') %}
+      {% set ns.devices = ns.devices + [ device ~ '/notify'] %}
     {%- endfor %}
     {{ ns.devices | reject('match','unavailable') | list }}
 
@@ -135,17 +153,37 @@ trigger: []
 condition: []
 
 action:
-  - repeat:
-      for_each: "{{ devices_topics }}"
-      sequence:
-        - service: mqtt.publish
-          data:
-            qos: 0
-            retain: false
-            topic: "{{ repeat.item }}"
-            payload: "{{ test_payload }}"
+  # Send to custom app if mode is 'app' or 'both'
+  - if:
+      - condition: template
+        value_template: "{{ display_mode in ['app', 'both'] }}"
+    then:
+      - repeat:
+          for_each: "{{ devices_topics }}"
+          sequence:
+            - service: mqtt.publish
+              data:
+                qos: 0
+                retain: false
+                topic: "{{ repeat.item }}"
+                payload: "{{ test_payload }}"
+
+  # Send AWTRIX notification if mode is 'notification' or 'both'
+  - if:
+      - condition: template
+        value_template: "{{ display_mode in ['notification', 'both'] }}"
+    then:
+      - repeat:
+          for_each: "{{ notify_topics }}"
+          sequence:
+            - service: mqtt.publish
+              data:
+                qos: 0
+                retain: false
+                topic: "{{ repeat.item }}"
+                payload: "{{ test_payload }}"
 
   - service: system_log.write
     data:
-      message: "DPC Alert test notification sent to {{ devices_topics|length }} AWTRIX device(s) - Level {{ test_level }}"
+      message: "DPC Alert test notification sent to {{ devices_topics|length }} AWTRIX device(s) - Level {{ test_level }} - Mode: {{ display_mode }}"
       level: info
