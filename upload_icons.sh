@@ -11,8 +11,5 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
-# Make sure the Python script is executable
-chmod +x "$PYTHON_SCRIPT" 2>/dev/null || true
-
 # Run the Python script with all arguments
 python3 "$PYTHON_SCRIPT" "$@"

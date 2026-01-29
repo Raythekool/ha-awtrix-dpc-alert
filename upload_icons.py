@@ -11,6 +11,8 @@ import sys
 import urllib.request
 import urllib.error
 import json
+import re
+import uuid
 from pathlib import Path
 from typing import List, Tuple
 
@@ -22,6 +24,31 @@ DEFAULT_ICONS = {
     "dpc-idrogeologico": 2289,
     "dpc-warning": 16754,
 }
+
+# HTTP request timeout in seconds
+REQUEST_TIMEOUT = 10
+
+
+def validate_ip_or_hostname(address: str) -> bool:
+    """
+    Validate if the address is a valid IP address or hostname.
+    
+    Args:
+        address: IP address or hostname to validate
+        
+    Returns:
+        True if valid, False otherwise
+    """
+    # Check for IPv4
+    ipv4_pattern = r'^(\d{1,3}\.){3}\d{1,3}$'
+    if re.match(ipv4_pattern, address):
+        # Verify each octet is <= 255
+        octets = address.split('.')
+        return all(0 <= int(octet) <= 255 for octet in octets)
+    
+    # Check for hostname (simplified check)
+    hostname_pattern = r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$'
+    return bool(re.match(hostname_pattern, address))
 
 
 def download_icon(icon_id: int) -> Tuple[bytes, str]:
@@ -41,7 +68,7 @@ def download_icon(icon_id: int) -> Tuple[bytes, str]:
     for ext in ['png', 'gif']:
         url = f"https://developer.lametric.com/content/apps/icon_thumbs/{icon_id}_icon_thumb.{ext}"
         try:
-            with urllib.request.urlopen(url, timeout=10) as response:
+            with urllib.request.urlopen(url, timeout=REQUEST_TIMEOUT) as response:
                 data = response.read()
                 if data:
                     print(f"  ✓ Downloaded icon {icon_id} ({ext.upper()})")
@@ -68,8 +95,8 @@ def upload_icon_to_awtrix(device_ip: str, icon_name: str, icon_data: bytes, file
     # AWTRIX uses an /edit endpoint for file uploads
     url = f"http://{device_ip}/edit"
     
-    # Create multipart form data
-    boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW"
+    # Create multipart form data with unique boundary
+    boundary = f"----WebKitFormBoundary{uuid.uuid4().hex}"
     
     # Build the multipart body
     body = []
@@ -94,7 +121,7 @@ def upload_icon_to_awtrix(device_ip: str, icon_name: str, icon_data: bytes, file
     )
     
     try:
-        with urllib.request.urlopen(req, timeout=10) as response:
+        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as response:
             if response.status in [200, 201]:
                 print(f"  ✓ Uploaded {icon_name}.{file_ext} to AWTRIX")
                 return True
@@ -127,7 +154,7 @@ def process_icon(device_ip: str, icon_name: str, icon_id: int) -> bool:
         # Upload to AWTRIX
         return upload_icon_to_awtrix(device_ip, icon_name, icon_data, file_ext)
     
-    except Exception as e:
+    except (urllib.error.URLError, ValueError) as e:
         print(f"  ✗ Error: {e}")
         return False
 
@@ -181,6 +208,12 @@ def main():
         print("Run with --help for more information.")
         return 1
     
+    # Validate device IP format
+    if not validate_ip_or_hostname(args.device_ip):
+        print(f"Error: '{args.device_ip}' does not appear to be a valid IP address or hostname")
+        print("Please provide a valid IP address (e.g., 192.168.1.100) or hostname")
+        return 1
+    
     # Build list of icons to upload
     icons_to_upload = {}
     
@@ -190,9 +223,13 @@ def main():
     if args.icon:
         for name, icon_id in args.icon:
             try:
-                icons_to_upload[name] = int(icon_id)
+                icon_id_int = int(icon_id)
+                if icon_id_int <= 0:
+                    print(f"Error: Icon ID must be a positive integer, got '{icon_id}'")
+                    return 1
+                icons_to_upload[name] = icon_id_int
             except ValueError:
-                print(f"Error: Icon ID must be a number, got '{icon_id}'")
+                print(f"Error: Icon ID must be a positive integer, got '{icon_id}'")
                 return 1
     
     # Validate we have icons to upload
