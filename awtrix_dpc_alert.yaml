@@ -185,24 +185,20 @@ variables:
   display_mode: !input display_mode
 
   # Color map for criticality levels
-  color_map: |
-    {{ dict({
-      0: "#0080FF",
-      1: "#00FF00",
-      2: "#FFFF00",
-      3: "#FF6000",
-      4: "#FF0000"
-    }) }}
+  color_map:
+    0: "#0080FF"
+    1: "#00FF00"
+    2: "#FFFF00"
+    3: "#FF6000"
+    4: "#FF0000"
 
   # Criticality level names
-  level_names: |
-    {{ dict({
-      0: "Nessuna",
-      1: "Ordinaria",
-      2: "Moderata",
-      3: "Elevata",
-      4: "Estrema"
-    }) }}
+  level_names:
+    0: "Nessuna"
+    1: "Ordinaria"
+    2: "Moderata"
+    3: "Elevata"
+    4: "Estrema"
 
   # Build payload with all active alerts
   alerts: |

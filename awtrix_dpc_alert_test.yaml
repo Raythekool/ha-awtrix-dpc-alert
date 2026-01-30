@@ -118,22 +118,18 @@ variables:
     {%- endfor %}
     {{ ns.devices | reject('match','unavailable') | list }}
 
-  color_map: |
-    {{ dict({
-      0: "#0080FF",
-      1: "#00FF00",
-      2: "#FFFF00",
-      3: "#FF6000",
-      4: "#FF0000"
-    }) }}
+  color_map:
+    0: "#0080FF"
+    1: "#00FF00"
+    2: "#FFFF00"
+    3: "#FF6000"
+    4: "#FF0000"
 
-  level_names: |
-    {{ dict({
-      1: "Ordinaria",
-      2: "Moderata",
-      3: "Elevata",
-      4: "Estrema"
-    }) }}
+  level_names:
+    1: "Ordinaria"
+    2: "Moderata"
+    3: "Elevata"
+    4: "Estrema"
 
   test_payload: |
     {%- set alert_obj = {
