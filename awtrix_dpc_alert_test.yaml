@@ -139,7 +139,7 @@ variables:
       'color': color_map[test_level],
       'pushIcon': 2,
       'repeat': 1,
-      'effect': 'ripple'
+      'effect': 'Ripple'
     } %}
     {%- if enable_sound %}
       {%- set _ = alert_obj.update({'sound': sound_file}) %}

@@ -227,7 +227,7 @@ variables:
           'color': color_map[level],
           'pushIcon': 2,
           'repeat': 1,
-          'effect': 'ripple'
+          'effect': 'Ripple'
         } %}
         {%- if enable_sound and level >= sound_level %}
           {%- set _ = alert_obj.update({'sound': sound_file}) %}
