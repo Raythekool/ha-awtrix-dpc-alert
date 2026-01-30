@@ -152,9 +152,11 @@ variables:
       'duration': duration_value,
       'color': color_map[test_level],
       'stack': false,
-      'effect': 'Ripple',
       'overlay': 'clear'
     } %}
+    {%- if test_level >= 3 %}
+      {%- set alert_obj = dict(alert_obj, effect='Ripple') %}
+    {%- endif %}
     {%- if enable_sound %}
       {%- set alert_obj = dict(alert_obj, sound=sound_file) %}
     {%- endif %}
