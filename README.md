@@ -1,5 +1,12 @@
 # AWTRIX Civil Protection Alert 🇮🇹
 
+[![GitHub Release](https://img.shields.io/github/v/release/Raythekool/ha-awtrix-dpc-alert?style=flat-square)](https://github.com/Raythekool/ha-awtrix-dpc-alert/releases)
+[![GitHub License](https://img.shields.io/github/license/Raythekool/ha-awtrix-dpc-alert?style=flat-square)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/Raythekool/ha-awtrix-dpc-alert?style=flat-square)](https://github.com/Raythekool/ha-awtrix-dpc-alert/stargazers)
+[![GitHub Issues](https://img.shields.io/github/issues/Raythekool/ha-awtrix-dpc-alert?style=flat-square)](https://github.com/Raythekool/ha-awtrix-dpc-alert/issues)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Blueprint-41BDF5?style=flat-square&logo=home-assistant)](https://www.home-assistant.io/)
+[![AWTRIX](https://img.shields.io/badge/AWTRIX-3-orange?style=flat-square)](https://blueforcer.github.io/awtrix3/)
+
 Blueprint for Home Assistant that displays Italian Civil Protection weather alerts on your AWTRIX3 device.
 
 ## ⚠️ Requirements
@@ -18,7 +25,7 @@ Before using this blueprint, make sure you have:
 
 1. Click the button below to import the blueprint:
 
-   [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FRaythekool%2Fawtrix_dpc_alert%2Fblob%2Fmain%2Fawtrix_dpc_alert.yaml)
+   [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FRaythekool%2Fha-awtrix-dpc-alert%2Fblob%2Fmain%2Fawtrix_dpc_alert.yaml)
 
 2. Click "Import Blueprint" in your Home Assistant
 3. The blueprint will be available in your automations
@@ -29,7 +36,7 @@ Before using this blueprint, make sure you have:
 2. Click the "Import Blueprint" button
 3. Enter this URL:
    ```
-   https://github.com/Raythekool/awtrix_dpc_alert/blob/main/awtrix_dpc_alert.yaml
+   https://github.com/Raythekool/ha-awtrix-dpc-alert/blob/main/awtrix_dpc_alert.yaml
    ```
 4. Click "Preview" and then "Import Blueprint"
 
@@ -57,11 +64,11 @@ This blueprint allows you to send test notifications to your AWTRIX devices to v
 
 **Import:**
 
-[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FRaythekool%2Fawtrix_dpc_alert%2Fblob%2Fmain%2Fawtrix_dpc_alert_test.yaml)
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FRaythekool%2Fha-awtrix-dpc-alert%2Fblob%2Fmain%2Fawtrix_dpc_alert_test.yaml)
 
 Or manually import this URL:
 ```
-https://github.com/Raythekool/awtrix_dpc_alert/blob/main/awtrix_dpc_alert_test.yaml
+https://github.com/Raythekool/ha-awtrix-dpc-alert/blob/main/awtrix_dpc_alert_test.yaml
 ```
 
 #### 🗑️ Clear App Blueprint
@@ -75,84 +82,21 @@ This blueprint removes the DPC Alert custom app from your AWTRIX devices when yo
 
 **Import:**
 
-[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FRaythekool%2Fawtrix_dpc_alert%2Fblob%2Fmain%2Fawtrix_dpc_alert_clear.yaml)
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FRaythekool%2Fha-awtrix-dpc-alert%2Fblob%2Fmain%2Fawtrix_dpc_alert_clear.yaml)
 
 Or manually import this URL:
 ```
-https://github.com/Raythekool/awtrix_dpc_alert/blob/main/awtrix_dpc_alert_clear.yaml
+https://github.com/Raythekool/ha-awtrix-dpc-alert/blob/main/awtrix_dpc_alert_clear.yaml
 ```
 
-## 🎨 Recommended Icons
+## 🎨 Icons Setup
 
-For better visualization, upload these icons to your AWTRIX:
+For better visualization and to use the recommended icons with your AWTRIX device, see the [Icons Upload Guide](ICONS_UPLOAD.md).
 
-- **dpc-idraulico** (49300) - Hydraulic risk (floods, overflows)
-- **dpc-temporali** (49299) - Storm risk
-- **dpc-idrogeologico** (2289) - Hydrogeological risk (landslides, mudslides)
-- **dpc-warning** (16754) - Generic alert icon
-
-**Important:** AWTRIX supports GIF format icons. The upload script automatically prioritizes downloading GIF versions over PNG format for better compatibility.
-
-You can find more icons at [developer.lametric.com/icons](https://developer.lametric.com/icons) or create custom ones.
-
-### 📤 Automatic Script to Upload Icons
-
-We've included a script that automatically downloads the recommended icons from LaMetric and uploads them to your AWTRIX device.
-
-**Easiest method - Just run the script:**
-
-```bash
-# Linux/Mac - runs with default icons, prompts for IP
-./upload_icons.sh
-
-# Windows - runs with default icons, prompts for IP
-upload_icons.bat
-
-# Or use Python directly
-python3 upload_icons.py
-```
-
-When you run the script without any parameters, it will:
-1. Prompt you to enter your AWTRIX device IP address
-2. Automatically download all 4 recommended DPC icons from LaMetric
-3. Upload them to your AWTRIX device
-
-**Quick usage with IP address:**
-
-```bash
-# Provide IP address directly (Linux/Mac)
-./upload_icons.sh 192.168.1.100
-
-# Provide IP address directly (Windows)
-upload_icons.bat 192.168.1.100
-
-# Or use Python directly
-python3 upload_icons.py 192.168.1.100
-```
-
-**Advanced options:**
-
-```bash
-# Display the list of default icons without uploading
-./upload_icons.sh --list-default
-
-# Upload specific custom icons (prompts for IP if not provided)
-./upload_icons.sh --icon my-icon 12345 --icon another-icon 67890
-
-# Combine default and custom icons
-./upload_icons.sh 192.168.1.100 --default-icons --icon custom-icon 99999
-
-# Upload only custom icons (no defaults)
-./upload_icons.sh 192.168.1.100 --icon my-custom-icon 54321
-```
-
-**What the script does:**
-- Downloads icons from LaMetric's public icon library (prioritizes GIF format)
-- Converts and uploads them to your AWTRIX device `/ICONS/` folder via HTTP API
-- No additional dependencies needed - uses only Python 3 standard library with requests module
-- Works on Linux, Mac, and Windows
-
-The script automatically downloads icons from LaMetric and uploads them to your AWTRIX via HTTP. No additional dependencies are needed, it only uses Python 3 standard library.
+The guide includes:
+- List of recommended icons for DPC alerts
+- Automatic upload script with simple and advanced usage examples
+- Instructions for using custom icons
 
 ## 🚀 Usage
 
@@ -267,12 +211,11 @@ The blueprint automatically applies visual effects based on alert severity:
 
 ### Using Custom Icons
 
-
-### Using Custom Icons
-
 You can use any icon from LaMetric or upload custom ones to your AWTRIX `/ICONS/` folder. Enter the icon filename (without extension) in the corresponding fields. The blueprint references icons by name, not by LaMetric ID.
 
 **Icon format:** GIF format is recommended for best compatibility with AWTRIX.
+
+For detailed instructions on uploading icons, see the [Icons Upload Guide](ICONS_UPLOAD.md).
 
 ### AWTRIX Notifications vs Custom Apps
 
