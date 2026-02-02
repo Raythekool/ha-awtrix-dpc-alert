@@ -144,36 +144,36 @@ variables:
     3: "Elevata"
     4: "Estrema"
 
-test_payload: |
-  {%- set is_notification = display_mode in ['notification', 'both'] %}
-  {%- set duration_value = notification_duration if is_notification else message_duration %}
-  
-  {%- set alert_obj = {
-    'text': 'TEST DPC Alert - Livello ' ~ level_names[test_level],
-    'icon': icon_test,
-    'color': color_map[test_level]
-  } %}
-  
-  {%- if is_notification %}
-    {%- set alert_obj = dict(alert_obj, pushIcon=2, repeat=3) %}
-    {%- if duration_value > 0 %}
-      {%- set alert_obj = dict(alert_obj, duration=duration_value) %}
+  test_payload: |
+    {%- set is_notification = display_mode in ['notification', 'both'] %}
+    {%- set duration_value = notification_duration if is_notification else message_duration %}
+    
+    {%- set alert_obj = {
+      'text': 'TEST DPC Alert - Livello ' ~ level_names[test_level],
+      'icon': icon_test,
+      'color': color_map[test_level]
+    } %}
+    
+    {%- if is_notification %}
+      {%- set alert_obj = dict(alert_obj, pushIcon=2, repeat=3) %}
+      {%- if duration_value > 0 %}
+        {%- set alert_obj = dict(alert_obj, duration=duration_value) %}
+      {%- else %}
+        {%- set alert_obj = dict(alert_obj, duration=30) %}
+      {%- endif %}
     {%- else %}
-      {%- set alert_obj = dict(alert_obj, duration=30) %}
+      {%- set alert_obj = dict(alert_obj, duration=duration_value, lifetime=600) %}
     {%- endif %}
-  {%- else %}
-    {%- set alert_obj = dict(alert_obj, duration=duration_value, lifetime=600) %}
-  {%- endif %}
-  
-  {%- if test_level >= 3 %}
-    {%- set alert_obj = dict(alert_obj, effect='Ripple') %}
-  {%- endif %}
-  
-  {%- if enable_sound %}
-    {%- set alert_obj = dict(alert_obj, rtttl=sound_file) %}
-  {%- endif %}
-  
-  {{ alert_obj|tojson }}
+    
+    {%- if test_level >= 3 %}
+      {%- set alert_obj = dict(alert_obj, effect='Ripple') %}
+    {%- endif %}
+    
+    {%- if enable_sound %}
+      {%- set alert_obj = dict(alert_obj, rtttl=sound_file) %}
+    {%- endif %}
+    
+    {{ alert_obj|tojson }}
 
 trigger: []
 
