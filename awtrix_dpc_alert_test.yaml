@@ -144,26 +144,36 @@ variables:
     3: "Elevata"
     4: "Estrema"
 
-  test_payload: |
-    {%- set duration_value = message_duration if display_mode == 'app' else notification_duration %}
-    {%- set alert_obj = {
-      'icon': icon_test,
-      'text': 'TEST DPC Alert - Livello ' ~ level_names[test_level],
-      'duration': duration_value,
-      'color': color_map[test_level],
-      'stack': false,
-      'overlay': 'clear'
-    } %}
-    {%- if test_level >= 3 %}
-      {%- set alert_obj = dict(alert_obj, effect='Ripple') %}
+test_payload: |
+  {%- set is_notification = display_mode in ['notification', 'both'] %}
+  {%- set duration_value = notification_duration if is_notification else message_duration %}
+  
+  {%- set alert_obj = {
+    'text': 'TEST DPC Alert - Livello ' ~ level_names[test_level],
+    'icon': icon_test,
+    'color': color_map[test_level]
+  } %}
+  
+  {%- if is_notification %}
+    {%- set alert_obj = dict(alert_obj, pushIcon=2, repeat=3) %}
+    {%- if duration_value > 0 %}
+      {%- set alert_obj = dict(alert_obj, duration=duration_value) %}
+    {%- else %}
+      {%- set alert_obj = dict(alert_obj, duration=30) %}
     {%- endif %}
-    {%- if enable_sound %}
-      {%- set alert_obj = dict(alert_obj, sound=sound_file) %}
-    {%- endif %}
-    {%- if display_mode in ['notification', 'both'] and notification_duration == 0 %}
-      {%- set alert_obj = dict(alert_obj, hold=true) %}
-    {%- endif %}
-    {{ alert_obj|tojson }}
+  {%- else %}
+    {%- set alert_obj = dict(alert_obj, duration=duration_value, lifetime=600) %}
+  {%- endif %}
+  
+  {%- if test_level >= 3 %}
+    {%- set alert_obj = dict(alert_obj, effect='Ripple') %}
+  {%- endif %}
+  
+  {%- if enable_sound %}
+    {%- set alert_obj = dict(alert_obj, rtttl=sound_file) %}
+  {%- endif %}
+  
+  {{ alert_obj|tojson }}
 
 trigger: []
 
