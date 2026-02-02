@@ -4,9 +4,9 @@
 
 For better visualization, upload these icons to your AWTRIX:
 
-- **dpc-idraulico** (49300) - Hydraulic risk (floods, overflows)
+- **dpc-idraulico** (18191) - Hydraulic risk (floods, overflows)
 - **dpc-temporali** (49299) - Storm risk
-- **dpc-idrogeologico** (2289) - Hydrogeological risk (landslides, mudslides)
+- **dpc-idrogeologico** (42639) - Hydrogeological risk (landslides, mudslides)
 - **dpc-warning** (16754) - Generic alert icon
 
 **Important:** AWTRIX supports GIF format icons. The upload script automatically prioritizes downloading GIF versions over PNG format for better compatibility.

@@ -20,8 +20,9 @@ from typing import List, Tuple
 # Default recommended icons for DPC alerts
 DEFAULT_ICONS = {
     "dpc-idraulico": 17055,
-    "dpc-temporali": 2289,
-    "dpc-idrogeologico": 2289,
+    "dpc-idraulico": 18191,
+    "dpc-temporali": 49299,
+    "dpc-idrogeologico": 42639,
     "dpc-warning": 16754,
 }
 

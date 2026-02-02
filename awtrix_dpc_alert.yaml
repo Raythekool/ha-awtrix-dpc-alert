@@ -1,22 +1,25 @@
 blueprint:
-  name: "AWTRIX Protezione Civile Alert 🇮🇹"
+  name: "AWTRIX Civil Protection Alert 🇮🇹"
   description:
-    "Mostra gli alert meteo della Protezione Civile sul tuo dispositivo AWTRIX.\n\n
-    ## ⚠️ REQUISITI ⚠️\n
-    Devi avere installato l'integrazione [DPC Alert](https://github.com/caiosweet/Home-Assistant-custom-components-DPC-Alert).\n\n
-    ## 📦 ICONE CONSIGLIATE\n
-    Ti consiglio di caricare queste icone sul tuo AWTRIX:\n
-    - `dpc-idraulico` - Rischio idraulico (alluvioni)\n
-    - `dpc-temporali` - Rischio temporali\n
-    - `dpc-idrogeologico` - Rischio idrogeologico (frane)\n
-    - `dpc-warning` - Icona generica alert\n\n
-    Puoi usare icone da [https://developer.lametric.com/icons](https://developer.lametric.com/icons) o crearne di personalizzate.\n\n
-    Aggiornamenti: https://github.com/Raythekool/awtrix_dpc_alert/blob/main/awtrix_dpc_alert.yaml"
+    "Display Italian Civil Protection (Protezione Civile) weather alerts on your AWTRIX device.\n\n
+    ## ⚠️ REQUIREMENTS ⚠️\n
+    You must have the [DPC Alert](https://github.com/caiosweet/Home-Assistant-custom-components-DPC-Alert) integration installed.\n\n
+    ## 📦 RECOMMENDED ICONS\n
+    We recommend uploading these icons to your AWTRIX:\n
+    - `dpc-idraulico` (18191) - Hydraulic risk (floods)\n
+    - `dpc-temporali` (49299) - Thunderstorm risk\n
+    - `dpc-idrogeologico` (42639) - Hydrogeological risk (landslides)\n
+    - `dpc-warning` (16754) - Generic alert icon\n\n
+    You can use icons from [https://developer.lametric.com/icons](https://developer.lametric.com/icons) or create custom ones.\n\n
+    Updates: https://github.com/Raythekool/awtrix_dpc_alert/blob/main/awtrix_dpc_alert.yaml"
   domain: automation
+  homeassistant:
+    min_version: "2024.6.0"
+  source_url: https://github.com/Raythekool/awtrix_dpc_alert/blob/main/awtrix_dpc_alert.yaml
   input:
     awtrix:
-      name: Dispositivo AWTRIX
-      description: Seleziona il tuo dispositivo AWTRIX
+      name: AWTRIX Device
+      description: Select your AWTRIX device
       selector:
         device:
           integration: mqtt
@@ -25,8 +28,8 @@ blueprint:
           multiple: true
 
     dpc_sensors:
-      name: Sensori DPC Alert
-      description: Seleziona i sensori di allerta che vuoi monitorare
+      name: DPC Alert Sensors
+      description: Select the alert sensors you want to monitor
       selector:
         entity:
           filter:
@@ -35,13 +38,13 @@ blueprint:
           multiple: true
 
     warning_level:
-      name: Livello minimo di allerta
+      name: Minimum Alert Level
       description: |
-        0 = Mostra tutte le allerte (anche assenza criticità)
-        1 = Verde (Ordinaria criticità)
-        2 = Giallo (Moderata criticità)
-        3 = Arancione (Criticità elevata)
-        4 = Rosso (Criticità estrema)
+        0 = Show all alerts (including no criticality)
+        1 = Green (Ordinary criticality)
+        2 = Yellow (Moderate criticality)
+        3 = Orange (High criticality)
+        4 = Red (Extreme criticality)
       selector:
         number:
           min: 0
@@ -51,8 +54,8 @@ blueprint:
       default: 1
 
     message_duration:
-      name: Durata messaggio ⏱️
-      description: Quanto tempo deve rimanere il messaggio sullo schermo (in secondi). 0 = usa il tempo globale
+      name: Message Duration ⏱️
+      description: How long the message should stay on screen (in seconds). 0 = use global time
       selector:
         number:
           min: 0
@@ -63,8 +66,8 @@ blueprint:
       default: 20
 
     notification_duration:
-      name: Durata notifica 🔔
-      description: Quanto tempo deve rimanere visibile la notifica (0 = mantieni fino a dismissione manuale)
+      name: Notification Duration 🔔
+      description: How long the notification should remain visible (0 = hold until manual dismissal)
       selector:
         number:
           min: 0
@@ -75,52 +78,52 @@ blueprint:
       default: 0
 
     icon_idraulico:
-      name: Icona Rischio Idraulico
-      description: "Icona per il rischio idraulico (alluvioni, esondazioni).\n
-        Nome file: dpc-idraulico"
+      name: Hydraulic Risk Icon
+      description: "Icon for hydraulic risk (floods, overflows).\n
+        Filename: dpc-idraulico (LaMetric ID: 18191)"
       selector:
         text: {}
       default: "dpc-idraulico"
 
     icon_temporali:
-      name: Icona Rischio Temporali
-      description: "Icona per il rischio temporali.\n
-        Nome file: dpc-temporali"
+      name: Storm Risk Icon
+      description: "Icon for storm risk.\n
+        Filename: dpc-temporali (LaMetric ID: 49299)"
       selector:
         text: {}
       default: "dpc-temporali"
 
     icon_idrogeologico:
-      name: Icona Rischio Idrogeologico
-      description: "Icona per il rischio idrogeologico (frane, smottamenti).\n
-        Nome file: dpc-idrogeologico"
+      name: Hydrogeological Risk Icon
+      description: "Icon for hydrogeological risk (landslides, mudslides).\n
+        Filename: dpc-idrogeologico (LaMetric ID: 42639)"
       selector:
         text: {}
       default: "dpc-idrogeologico"
 
     icon_warning:
-      name: Icona Alert Generica
-      description: "Icona generica per altri tipi di alert.\n
-        Nome file: dpc-warning"
+      name: Generic Alert Icon
+      description: "Generic icon for other alert types.\n
+        Filename: dpc-warning (LaMetric ID: 16754)"
       selector:
         text: {}
       default: "dpc-warning"
 
     enable_sound:
-      name: Abilita Suono 🔊
-      description: Riproduce un suono quando arriva un'allerta
+      name: Enable Sound 🔊
+      description: Play a sound when an alert arrives
       selector:
         boolean: {}
       default: false
 
     sound_level:
-      name: Livello minimo per suono
+      name: Minimum Level for Sound
       description: |
-        Riproduci suono solo per allerte di questo livello o superiore:
-        1 = Verde (Ordinaria)
-        2 = Giallo (Moderata)
-        3 = Arancione (Elevata)
-        4 = Rosso (Estrema)
+        Play sound only for alerts of this level or higher:
+        1 = Green (Ordinary)
+        2 = Yellow (Moderate)
+        3 = Orange (High)
+        4 = Red (Extreme)
       selector:
         number:
           min: 1
@@ -130,11 +133,11 @@ blueprint:
       default: 3
 
     sound_file:
-      name: File Suono
+      name: Sound File
       description: |
-        Nome del file audio da riprodurre (senza estensione).
-        Esempi: alarm, doorbell, notification, etc.
-        Vedi la documentazione AWTRIX per i suoni disponibili.
+        Name of the audio file to play (without extension).
+        Examples: alarm, doorbell, notification, etc.
+        See the AWTRIX documentation for available sounds.
       selector:
         text: {}
       default: "alarm"
@@ -207,11 +210,11 @@ variables:
 
   # Criticality level names
   level_names:
-    0: "Nessuna"
-    1: "Ordinaria"
-    2: "Moderata"
-    3: "Elevata"
-    4: "Estrema"
+    0: "None"
+    1: "Ordinary"
+    2: "Moderate"
+    3: "High"
+    4: "Extreme"
 
   # Build payload with all active alerts
   alerts: |
