@@ -6,7 +6,7 @@ blueprint:
     You must have the [DPC Alert](https://github.com/caiosweet/Home-Assistant-custom-components-DPC-Alert) integration installed.\n\n
     ## 📦 RECOMMENDED ICONS\n
     We recommend uploading these icons to your AWTRIX:\n
-    - `dpc-idraulico` (18191) - Hydraulic risk (floods)\n
+    - `dpc-idraulico` (63) - Hydraulic risk (floods)\n
     - `dpc-temporali` (49299) - Thunderstorm risk\n
     - `dpc-idrogeologico` (42639) - Hydrogeological risk (landslides)\n
     - `dpc-warning` (16754) - Generic alert icon\n\n
@@ -80,7 +80,7 @@ blueprint:
     icon_idraulico:
       name: Hydraulic Risk Icon
       description: "Icon for hydraulic risk (floods, overflows).\n
-        Filename: dpc-idraulico (LaMetric ID: 18191)"
+        Filename: dpc-idraulico (LaMetric ID: 63)"
       selector:
         text: {}
       default: "dpc-idraulico"
@@ -142,6 +142,38 @@ blueprint:
         text: {}
       default: "alarm"
 
+    rainbow_level:
+      name: Minimum Level for Rainbow 🌈
+      description: |
+        Display rainbow text for alerts of this level or higher (0 = disabled):
+        1 = Green (Ordinary)
+        2 = Yellow (Moderate)
+        3 = Orange (High)
+        4 = Red (Extreme)
+      selector:
+        number:
+          min: 0
+          max: 4
+          mode: box
+          step: 1
+      default: 0
+
+    ripple_level:
+      name: Minimum Level for Ripple Effect 〰️
+      description: |
+        Show ripple effect for alerts of this level or higher (0 = disabled):
+        1 = Green (Ordinary)
+        2 = Yellow (Moderate)
+        3 = Orange (High)
+        4 = Red (Extreme)
+      selector:
+        number:
+          min: 0
+          max: 4
+          mode: box
+          step: 1
+      default: 3
+
     display_mode:
       name: Display Mode 📺
       description: |
@@ -198,6 +230,8 @@ variables:
   enable_sound: !input enable_sound
   sound_level: !input sound_level
   sound_file: !input sound_file
+  rainbow_level: !input rainbow_level
+  ripple_level: !input ripple_level
   display_mode: !input display_mode
 
   # Color map for criticality levels
@@ -241,11 +275,17 @@ variables:
           'icon': icon,
           'text': alert ~ ' - ' ~ zone,
           'duration': duration_value,
-          'color': color_map[level],
           'stack': false,
           'overlay': 'clear'
         } %}
-        {%- if level >= 3 %}
+        {#- Only set color if rainbow is not active -#}
+        {%- if rainbow_level == 0 or level < rainbow_level %}
+          {%- set alert_obj = dict(alert_obj, color=color_map[level]) %}
+        {%- endif %}
+        {%- if rainbow_level > 0 and level >= rainbow_level %}
+          {%- set alert_obj = dict(alert_obj, rainbow=true) %}
+        {%- endif %}
+        {%- if ripple_level > 0 and level >= ripple_level %}
           {%- set alert_obj = dict(alert_obj, effect='Ripple') %}
         {%- endif %}
         {%- if enable_sound and level >= sound_level %}
