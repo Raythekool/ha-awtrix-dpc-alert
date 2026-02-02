@@ -151,18 +151,13 @@ variables:
     {%- set alert_obj = {
       'text': 'TEST DPC Alert - Livello ' ~ level_names[test_level],
       'icon': icon_test,
-      'color': color_map[test_level]
+      'color': color_map[test_level],
+      'stack': false,
+      'overlay': 'clear'
     } %}
     
-    {%- if is_notification %}
-      {%- set alert_obj = dict(alert_obj, pushIcon=2, repeat=3) %}
-      {%- if duration_value > 0 %}
-        {%- set alert_obj = dict(alert_obj, duration=duration_value) %}
-      {%- else %}
-        {%- set alert_obj = dict(alert_obj, duration=30) %}
-      {%- endif %}
-    {%- else %}
-      {%- set alert_obj = dict(alert_obj, duration=duration_value, lifetime=600) %}
+    {%- if duration_value > 0 %}
+      {%- set alert_obj = dict(alert_obj, duration=duration_value) %}
     {%- endif %}
     
     {%- if test_level >= 3 %}
@@ -170,7 +165,11 @@ variables:
     {%- endif %}
     
     {%- if enable_sound %}
-      {%- set alert_obj = dict(alert_obj, rtttl=sound_file) %}
+      {%- set alert_obj = dict(alert_obj, sound=sound_file) %}
+    {%- endif %}
+    
+    {%- if is_notification and notification_duration == 0 %}
+      {%- set alert_obj = dict(alert_obj, hold=true) %}
     {%- endif %}
     
     {{ alert_obj|tojson }}
