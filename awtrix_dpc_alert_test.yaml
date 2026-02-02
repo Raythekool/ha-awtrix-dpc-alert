@@ -1,10 +1,33 @@
 blueprint:
   name: "AWTRIX DPC Alert - Test Notification 🧪"
   description:
-    "Sends a test notification to AWTRIX to verify the configuration.\n\n
-    This blueprint creates an automation that can be manually triggered to send
-    a test notification to AWTRIX devices.\n\n
-    Useful to verify that icons and settings are correct."
+    "Sends a test notification to AWTRIX devices to verify DPC alert configuration.\n\n
+    This blueprint creates a manually-triggered automation for testing alert displays
+    before real DPC alerts arrive. Essential for validating your setup.\n\n
+    ## 🎯 Purpose\n\n
+    - Verify icons are correctly uploaded and display properly\n\n
+    - Test different criticality levels (1-4) with accurate colors and effects\n\n
+    - Validate sound notifications at different thresholds\n\n
+    - Test both Custom App (persistent) and Notification (temporary) display modes\n\n
+    - Confirm rainbow text and ripple effects work as configured\n\n
+    - Ensure MQTT communication is functioning correctly\n\n\n
+    ## 📝 How to Use\n\n
+    1. Create automation from this blueprint\n\n
+    2. Select your AWTRIX device(s)\n\n
+    3. Choose a test criticality level (1-4)\n\n
+    4. Configure durations, effects, and display mode\n\n
+    5. Save and trigger manually to send test notification\n\n
+    6. Verify display, colors, icons, sound, and effects\n\n
+    7. Adjust settings as needed and test again\n\n\n
+    ## ✨ Features\n\n
+    - Test all 4 criticality levels with proper color coding\n\n
+    - Configurable rainbow text effect (minimum level threshold)\n\n
+    - Configurable ripple background effect (minimum level threshold)\n\n
+    - Choose display mode: Custom App, Notification, or Both\n\n
+    - Separate durations for custom apps and notifications\n\n
+    - Hold mode support (notification duration = 0)\n\n
+    - Optional sound notifications with level threshold\n\n
+    - Test payload visible in trace for debugging"
   domain: automation
   input:
     awtrix:
