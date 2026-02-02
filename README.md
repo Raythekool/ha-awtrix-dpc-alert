@@ -124,6 +124,8 @@ The guide includes:
    - **Icons**: Customize icon names for each risk type (without extension)
    - **Enable Sound**: Toggle sound notifications
    - **Sound Level**: Minimum alert level to play sound (default: Orange/High)
+   - **Rainbow Text Level**: Minimum alert level for rainbow text effect (0-4, default: 0 = disabled)
+   - **Ripple Effect Level**: Minimum alert level for ripple background effect (0-4, default: 3 = Orange/High)
    - **Display Mode**: Choose how to display alerts:
      - Custom App (Persistent): Stays on screen until cleared
      - Notification (Temporary): Pop-up that auto-dismisses or holds based on duration
@@ -163,7 +165,8 @@ If you need to remove the DPC Alert app from your AWTRIX devices:
   - Yellow: Moderate
   - Dark Orange: High
   - Red: Extreme
-- **Ripple effect**: Visual background effect for high-criticality alerts (levels 3 and 4)
+- **Rainbow text effect**: Configurable rainbow text animation for high-severity alerts
+- **Ripple effect**: Configurable animated background ripple for high-criticality alerts (default: levels 3-4)
 - **Customizable icons**: Use different icons for each risk type (GIF format recommended)
 - **Sound notifications**: Optional sound alerts for critical warnings with configurable threshold
 - **Display modes**: Choose between Custom App (persistent), Notification (temporary), or Both
@@ -209,12 +212,27 @@ The blueprint supports three display modes:
 
 ### Visual Effects
 
-The blueprint automatically applies visual effects based on alert severity:
+The blueprint provides configurable visual effects based on alert severity:
 
-- **Ripple Effect**: Applied only to high-criticality alerts (levels 3 and 4)
+- **Rainbow Text Effect** (rainbow_level setting):
+  - Applies colorful rainbow animation to alert text
+  - Default: 0 (disabled)
+  - When enabled, overrides the solid color setting
+  - Set to desired minimum alert level (1-4) to enable for that level and above
+  - Note: Rainbow and color are mutually exclusive (AWTRIX API limitation)
+
+- **Ripple Effect** (ripple_level setting):
   - Creates an animated background ripple effect
-  - Uses default AWTRIX settings (speed=3, Rainbow palette, blend=true)
-  - Lower severity alerts (levels 1-2) display without effects
+  - Default: 3 (Orange/High criticality and above)
+  - Uses AWTRIX defaults: speed=3, Rainbow palette, blend=true
+  - Set to 0 to disable completely, or adjust threshold (1-4) as needed
+  - Applied when alert level >= configured threshold
+
+**Customization Examples:**
+- Disable all effects: Set both rainbow_level and ripple_level to 0
+- Maximum effects: Set rainbow_level to 1 (enables for all alerts)
+- Conservative: Keep defaults (rainbow disabled, ripple at level 3+)
+- Extreme only: Set both to 4 (Red alerts only)
 
 ### Using Custom Icons
 
@@ -252,11 +270,12 @@ The blueprint generates AWTRIX-compatible payloads with these properties:
   "icon": "dpc-warning",
   "text": "Alert message",
   "duration": 20,
-  "color": "#FF6000",
+  "color": "#FF6000",     // Only when rainbow is disabled
+  "rainbow": true,        // Only when level >= rainbow_level setting
   "stack": false,
   "overlay": "clear",
-  "effect": "Ripple",     // Only for levels 3-4
-  "sound": "alarm",       // Optional, based on settings
+  "effect": "Ripple",     // Only when level >= ripple_level setting
+  "sound": "alarm",       // Optional, based on enable_sound and sound_level
   "hold": true            // Only for notifications with duration=0
 }
 ```
@@ -267,7 +286,8 @@ The blueprint generates AWTRIX-compatible payloads with these properties:
 - Custom apps are published to MQTT topic `{prefix}/custom/dpc_alert`
 - Notifications are published to MQTT topic `{prefix}/notify`
 - If there are multiple active alerts, they will be displayed in sequence
-- Ripple effect is automatically applied only to high-criticality alerts (levels 3-4)
+- Rainbow text and ripple effects are configurable with level thresholds (default: rainbow disabled, ripple at level 3+)
+- Rainbow and color are mutually exclusive per AWTRIX API (rainbow takes precedence when enabled)
 - Icon files should be in GIF format and uploaded to AWTRIX `/ICONS/` folder
 - Notifications with duration=0 automatically use hold mode (manual dismiss required)
 - Home Assistant's Jinja2 sandbox restrictions: Uses `dict()` constructor instead of `.update()` method
