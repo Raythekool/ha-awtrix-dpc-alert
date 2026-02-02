@@ -19,7 +19,7 @@ from typing import List, Tuple
 
 # Default recommended icons for DPC alerts
 DEFAULT_ICONS = {
-    "dpc-idraulico": 18191,
+    "dpc-idraulico": 63,
     "dpc-temporali": 49299,
     "dpc-idrogeologico": 42639,
     "dpc-warning": 16754,
@@ -93,17 +93,19 @@ def download_icon(icon_id: int) -> Tuple[bytes, str]:
     """
     # Try GIF first (preferred by AWTRIX), then PNG
     for ext in ['gif', 'png']:
-        url = f"https://developer.lametric.com/content/apps/icon_thumbs/{icon_id}_icon_thumb.{ext}"
+        # FIXED: Use the 8x8 version without _icon_thumb suffix
+        url = f"https://developer.lametric.com/content/apps/icon_thumbs/{icon_id}.{ext}"
         try:
             with urllib.request.urlopen(url, timeout=REQUEST_TIMEOUT) as response:
                 data = response.read()
                 if data:
-                    print(f"  ✓ Downloaded icon {icon_id} ({ext.upper()})")
+                    print(f"  ✓ Downloaded icon {icon_id} ({ext.upper()}, 8x8)")
                     return data, ext
         except urllib.error.HTTPError:
             continue
     
     raise ValueError(f"Could not download icon {icon_id} - icon not found or server error")
+
 
 
 def upload_icon_to_awtrix(device_ip: str, icon_name: str, icon_data: bytes, file_ext: str) -> bool:

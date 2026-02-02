@@ -78,6 +78,38 @@ blueprint:
         text: {}
       default: "alarm"
 
+    rainbow_level:
+      name: Minimum Level for Rainbow 🌈
+      description: |
+        Display rainbow text for alerts of this level or higher (0 = disabled):
+        1 = Green (Ordinary)
+        2 = Yellow (Moderate)
+        3 = Orange (High)
+        4 = Red (Extreme)
+      selector:
+        number:
+          min: 0
+          max: 4
+          mode: box
+          step: 1
+      default: 0
+
+    ripple_level:
+      name: Minimum Level for Ripple Effect 〰️
+      description: |
+        Show ripple effect for alerts of this level or higher (0 = disabled):
+        1 = Green (Ordinary)
+        2 = Yellow (Moderate)
+        3 = Orange (High)
+        4 = Red (Extreme)
+      selector:
+        number:
+          min: 0
+          max: 4
+          mode: box
+          step: 1
+      default: 3
+
     display_mode:
       name: Display Mode 📺
       description: |
@@ -107,6 +139,8 @@ variables:
   icon_test: !input icon_test
   enable_sound: !input enable_sound
   sound_file: !input sound_file
+  rainbow_level: !input rainbow_level
+  ripple_level: !input ripple_level
   display_mode: !input display_mode
 
   devices_topics: |
@@ -151,16 +185,25 @@ variables:
     {%- set alert_obj = {
       'text': 'TEST DPC Alert - Livello ' ~ level_names[test_level],
       'icon': icon_test,
-      'color': color_map[test_level],
-      'stack': false
+      'stack': false,
+      'overlay': 'clear'
     } %}
+    
+    {#- Only set color if rainbow is not active -#}
+    {%- if rainbow_level == 0 or test_level < rainbow_level %}
+      {%- set alert_obj = dict(alert_obj, color=color_map[test_level]) %}
+    {%- endif %}
+    
+    {%- if rainbow_level > 0 and test_level >= rainbow_level %}
+      {%- set alert_obj = dict(alert_obj, rainbow=true) %}
+    {%- endif %}
+    
+    {%- if ripple_level > 0 and test_level >= ripple_level %}
+      {%- set alert_obj = dict(alert_obj, effect='Ripple') %}
+    {%- endif %}
     
     {%- if duration_value > 0 %}
       {%- set alert_obj = dict(alert_obj, duration=duration_value) %}
-    {%- endif %}
-    
-    {%- if test_level >= 3 %}
-      {%- set alert_obj = dict(alert_obj, effect='blink') %}
     {%- endif %}
     
     {%- if enable_sound %}
