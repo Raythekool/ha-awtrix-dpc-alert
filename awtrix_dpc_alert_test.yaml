@@ -152,8 +152,7 @@ variables:
       'text': 'TEST DPC Alert - Livello ' ~ level_names[test_level],
       'icon': icon_test,
       'color': color_map[test_level],
-      'stack': false,
-      'overlay': 'clear'
+      'stack': false
     } %}
     
     {%- if duration_value > 0 %}
@@ -161,7 +160,7 @@ variables:
     {%- endif %}
     
     {%- if test_level >= 3 %}
-      {%- set alert_obj = dict(alert_obj, effect='Ripple') %}
+      {%- set alert_obj = dict(alert_obj, effect='blink') %}
     {%- endif %}
     
     {%- if enable_sound %}
