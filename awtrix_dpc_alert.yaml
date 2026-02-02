@@ -1,17 +1,42 @@
 blueprint:
   name: "AWTRIX Civil Protection Alert 🇮🇹"
   description:
-    "Display Italian Civil Protection (Protezione Civile) weather alerts on your AWTRIX device.\n\n
-    ## ⚠️ REQUIREMENTS ⚠️\n
-    You must have the [DPC Alert](https://github.com/caiosweet/Home-Assistant-custom-components-DPC-Alert) integration installed.\n\n
+    "Display Italian Civil Protection (Protezione Civile) weather alerts on your AWTRIX LED matrix device.\n\n
+    Automatically monitors DPC alert sensors and displays color-coded notifications with icons,
+    sound alerts, and visual effects based on criticality level.\n\n
+    ## ⚠️ REQUIREMENTS\n
+    - **Home Assistant** 2024.6.0 or newer\n
+    - **AWTRIX 3** device configured with MQTT\n
+    - **[DPC Alert Integration](https://github.com/caiosweet/Home-Assistant-custom-components-DPC-Alert)** installed and configured\n\n
+    ## 🎯 KEY FEATURES\n
+    - **Multi-sensor monitoring**: Track multiple DPC sensors simultaneously\n
+    - **Criticality filtering**: Show only alerts above configurable threshold (0-4)\n
+    - **Automatic color coding**: Vivid colors based on alert level (Blue/Green/Yellow/Orange/Red)\n
+    - **Rainbow text effect**: Optional colorful animation for high-severity alerts\n
+    - **Ripple background effect**: Animated ripple for critical warnings (configurable threshold)\n
+    - **Sound notifications**: Optional audio alerts with minimum level threshold\n
+    - **Flexible display modes**: Choose Custom App (persistent), Notification (temporary), or Both\n
+    - **Auto-clear**: Removes alerts automatically when no longer active\n
+    - **Multi-device support**: Send to multiple AWTRIX devices simultaneously\n\n
     ## 📦 RECOMMENDED ICONS\n
-    We recommend uploading these icons to your AWTRIX:\n
-    - `dpc-idraulico` (63) - Hydraulic risk (floods)\n
-    - `dpc-temporali` (49299) - Thunderstorm risk\n
-    - `dpc-idrogeologico` (42639) - Hydrogeological risk (landslides)\n
-    - `dpc-warning` (16754) - Generic alert icon\n\n
-    You can use icons from [https://developer.lametric.com/icons](https://developer.lametric.com/icons) or create custom ones.\n\n
-    Updates: https://github.com/Raythekool/awtrix_dpc_alert/blob/main/awtrix_dpc_alert.yaml"
+    Upload these icons to your AWTRIX for best results:\n
+    - `dpc-idraulico` (63) - Hydraulic risk (floods, overflows)\n
+    - `dpc-temporali` (49299) - Thunderstorm risk (lightning, strong winds)\n
+    - `dpc-idrogeologico` (42639) - Hydrogeological risk (landslides, mudflows)\n
+    - `dpc-warning` (16754) - Generic alert icon (fallback)\n\n
+    Get icons from [LaMetric Icons](https://developer.lametric.com/icons) or create custom GIF files.\n
+    See [Icons Upload Guide](https://github.com/Raythekool/ha-awtrix-dpc-alert/blob/main/ICONS_UPLOAD.md) for automated upload script.\n\n
+    ## ⚙️ CONFIGURATION OPTIONS\n
+    - **Alert Level Threshold**: Filter by minimum criticality (0-4)\n
+    - **Display Durations**: Separate controls for custom apps and notifications\n
+    - **Rainbow Text Level**: Enable rainbow animation at specified level (0=disabled)\n
+    - **Ripple Effect Level**: Enable ripple background at specified level (default: 3)\n
+    - **Sound Settings**: Optional audio with minimum level threshold\n
+    - **Display Mode**: Custom App (stays visible), Notification (temporary pop-up), or Both\n
+    - **Custom Icons**: Override default icon names for each risk type\n\n
+    ## 🔗 MORE INFO\n
+    Documentation: https://github.com/Raythekool/ha-awtrix-dpc-alert\n
+    Updates: https://github.com/Raythekool/ha-awtrix-dpc-alert/blob/main/awtrix_dpc_alert.yaml"
   domain: automation
   homeassistant:
     min_version: "2024.6.0"
