@@ -48,62 +48,14 @@ Before using this blueprint, make sure you have:
 2. Copy the file to the `blueprints/automation/` folder in your Home Assistant configuration
 3. Restart Home Assistant or reload automations
 
-### Optional Helper Blueprints
+## 🎨 Icon Setup
 
-For testing and management, you can also install these helper blueprints:
+For better visualization, upload the recommended icon to your AWTRIX device. See the [Icons Upload Guide](ICONS_UPLOAD.md) for details.
 
-#### 🧪 Test Notification Blueprint
+**Recommended icon:**
+- **dpc-warning** (16754) - Alert icon for all risk types
 
-This blueprint allows you to send test notifications to your AWTRIX devices to verify your configuration is working correctly.
-
-**Features:**
-
-- Send test notifications with different criticality levels (1-4)
-- Test icon display
-- Test sound notifications
-- Configurable message and notification durations
-- Choose display mode: Custom App (persistent), Notification (temporary), or Both
-- Automatic hold mode when notification duration is set to 0
-
-**Import:**
-
-[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FRaythekool%2Fha-awtrix-dpc-alert%2Fblob%2Fmain%2Fawtrix_dpc_alert_test.yaml)
-
-Or manually import this URL:
-
-```text
-https://github.com/Raythekool/ha-awtrix-dpc-alert/blob/main/awtrix_dpc_alert_test.yaml
-```
-
-#### 🗑️ Clear App Blueprint
-
-This blueprint removes the DPC Alert custom app from your AWTRIX devices when you need to clear the display.
-
-**Features:**
-
-- Quickly remove DPC Alert app from all configured devices
-- Useful for troubleshooting or cleaning up
-- Manually triggered when needed
-
-**Import:**
-
-[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FRaythekool%2Fha-awtrix-dpc-alert%2Fblob%2Fmain%2Fawtrix_dpc_alert_clear.yaml)
-
-Or manually import this URL:
-
-```text
-https://github.com/Raythekool/ha-awtrix-dpc-alert/blob/main/awtrix_dpc_alert_clear.yaml
-```
-
-## 🎨 Icons Setup
-
-For better visualization and to use the recommended icons with your AWTRIX device, see the [Icons Upload Guide](ICONS_UPLOAD.md).
-
-The guide includes:
-
-- List of recommended icons for DPC alerts
-- Automatic upload script with simple and advanced usage examples
-- Instructions for using custom icons
+The guide includes an automatic upload script with simple usage.
 
 ## 🚀 Usage
 
@@ -120,40 +72,32 @@ The guide includes:
      - 3 = Orange (High criticality)
      - 4 = Red (Extreme criticality)
    - **Message Duration**: Display time for custom app in seconds (default: 20)
-   - **Notification Duration**: Display time for notifications in seconds (default: 0 = hold until dismissed)
-   - **Icons**: Customize icon names for each risk type (without extension)
+   - **Notification Duration**: Display time for notifications in seconds (default: 10)
+   - **Alert Icon**: Customize icon name (default: dpc-warning)
    - **Enable Sound**: Toggle sound notifications
    - **Sound Level**: Minimum alert level to play sound (default: Orange/High)
    - **Rainbow Text Level**: Minimum alert level for rainbow text effect (0-4, default: 0 = disabled)
-   - **Ripple Effect Level**: Minimum alert level for ripple background effect (0-4, default: 3 = Orange/High)
    - **Display Mode**: Choose how to display alerts:
      - Custom App (Persistent): Stays on screen until cleared
      - Notification (Temporary): Pop-up that auto-dismisses or holds based on duration
      - Both: Send both custom app and notification
+   - **Test Mode**: Enable to manually trigger test alerts without waiting for real DPC data
 5. Save the automation
 
 ### 🧪 Testing Your Setup
 
-After installing the test blueprint, create an automation to send test notifications:
+The blueprint includes built-in test mode:
 
-1. Go to Home Assistant → Settings → Automations & Scenes
-2. Click "Create Automation" → "Use a blueprint"
-3. Select "AWTRIX DPC Alert - Test Notification 🧪"
-4. Configure:
-   - Select your AWTRIX device(s)
-   - Choose a test criticality level (1-4)
-   - Set message duration (for custom app) and notification duration (0 = hold until dismissed)
-   - Enable sound if desired
-   - Choose display mode: Custom App (persistent), Notification (temporary), or Both
-5. Save the automation and trigger it manually to test
+1. Edit your automation
+2. Enable "Test Mode"
+3. Set test levels for each risk type:
+   - **Hydraulic Risk Level**: 0-4 (0 = disabled)
+   - **Storm Risk Level**: 0-4 (0 = disabled)
+   - **Hydrogeological Risk Level**: 0-4 (0 = disabled)
+4. Save and trigger the automation manually
+5. You should see the test alert on your AWTRIX device
 
-### 🗑️ Clearing the Display
-
-If you need to remove the DPC Alert app from your AWTRIX devices:
-
-1. Create an automation using the "AWTRIX DPC Alert - Clear App 🗑️" blueprint
-2. Select your AWTRIX device(s)
-3. Save and trigger it manually whenever needed
+Example: Setting Hydraulic=3 and Storm=4 will display "IDR3-TMP4" with red color (highest level).
 
 ## 🎯 Features
 
@@ -165,17 +109,30 @@ If you need to remove the DPC Alert app from your AWTRIX devices:
   - Yellow: Moderate
   - Dark Orange: High
   - Red: Extreme
+- **Compact display**: Shows abbreviated alerts (e.g. "IDR3-TMP4") for both apps and notifications
 - **Rainbow text effect**: Configurable rainbow text animation for high-severity alerts
-- **Ripple effect**: Configurable animated background ripple for high-criticality alerts (default: levels 3-4)
-- **Customizable icons**: Use different icons for each risk type (GIF format recommended)
+- **Customizable icon**: Single icon for all alert types (GIF format recommended)
 - **Sound notifications**: Optional sound alerts for critical warnings with configurable threshold
 - **Display modes**: Choose between Custom App (persistent), Notification (temporary), or Both
 - **Flexible duration**: Separate durations for custom apps and notifications
 - **Hold mode**: Notifications with duration 0 stay on screen until manually dismissed
 - **Multi-device**: Supports multiple AWTRIX devices simultaneously
 - **Auto-clear**: Automatically removes alerts when they are no longer active
-- **Test mode**: Send test notifications to verify configuration with all display options
-- **Manual clear**: Remove apps from display when needed
+- **Test mode**: Built-in test mode to verify configuration without waiting for real alerts
+
+## 📺 Display Format
+
+Both Custom App and Notification use compact format showing all active alerts on one screen:
+
+**Example: IDR3-TMP4**
+- **IDR** = Rischio Idraulico (Hydraulic) level 3
+- **TMP** = Rischio Temporali (Storm) level 4
+- Color is based on highest alert level (red in this case)
+
+**Abbreviations:**
+- **IDR** = Rischio Idraulico (Hydraulic)
+- **TMP** = Rischio Temporali (Storm)
+- **IDG** = Rischio Idrogeologico (Hydrogeological)
 
 ## 🔧 Advanced Configuration
 
@@ -212,7 +169,7 @@ The blueprint supports three display modes:
 
 ### Visual Effects
 
-The blueprint provides configurable visual effects based on alert severity:
+The blueprint provides configurable rainbow text effect:
 
 - **Rainbow Text Effect** (rainbow_level setting):
   - Applies colorful rainbow animation to alert text
@@ -221,76 +178,30 @@ The blueprint provides configurable visual effects based on alert severity:
   - Set to desired minimum alert level (1-4) to enable for that level and above
   - Note: Rainbow and color are mutually exclusive (AWTRIX API limitation)
 
-- **Ripple Effect** (ripple_level setting):
-  - Creates an animated background ripple effect
-  - Default: 3 (Orange/High criticality and above)
-  - Uses AWTRIX defaults: speed=3, Rainbow palette, blend=true
-  - Set to 0 to disable completely, or adjust threshold (1-4) as needed
-  - Applied when alert level >= configured threshold
-
 **Customization Examples:**
-- Disable all effects: Set both rainbow_level and ripple_level to 0
+- Disable effects: Set rainbow_level to 0
 - Maximum effects: Set rainbow_level to 1 (enables for all alerts)
-- Conservative: Keep defaults (rainbow disabled, ripple at level 3+)
-- Extreme only: Set both to 4 (Red alerts only)
+- Extreme only: Set rainbow_level to 4 (Red alerts only)
 
 ### Using Custom Icons
 
-You can use any icon from LaMetric or upload custom ones to your AWTRIX `/ICONS/` folder. Enter the icon filename (without extension) in the corresponding fields. The blueprint references icons by name, not by LaMetric ID.
+You can use any icon from LaMetric or upload custom ones to your AWTRIX `/ICONS/` folder. Enter the icon filename (without extension) in the icon field. The blueprint references icons by name, not by LaMetric ID.
 
 **Icon format:** GIF format is recommended for best compatibility with AWTRIX.
 
 For detailed instructions on uploading icons, see the [Icons Upload Guide](ICONS_UPLOAD.md).
-
-### AWTRIX Notifications vs Custom Apps
-
-Understanding the difference between display modes:
-
-- **Custom App**: Persistent alert that stays visible until cleared
-  - Topic: `{prefix}/custom/dpc_alert`
-  - Duration controlled by `message_duration`
-  - Best for: Ongoing weather alerts you want to monitor
-  
-- **Notification**: Temporary pop-up that overlays current display
-  - Topic: `{prefix}/notify`
-  - Duration controlled by `notification_duration`
-  - When duration = 0: Includes `hold: true` (manual dismiss required)
-  - Best for: Immediate attention alerts
-
-- **Both**: Combines persistence and immediacy
-  - Custom app provides continuous visibility
-  - Notification ensures immediate attention
-
-### Payload Structure
-
-The blueprint generates AWTRIX-compatible payloads with these properties:
-
-```json
-{
-  "icon": "dpc-warning",
-  "text": "Alert message",
-  "duration": 20,
-  "color": "#FF6000",     // Only when rainbow is disabled
-  "rainbow": true,        // Only when level >= rainbow_level setting
-  "stack": false,
-  "overlay": "clear",
-  "effect": "Ripple",     // Only when level >= ripple_level setting
-  "sound": "alarm",       // Optional, based on enable_sound and sound_level
-  "hold": true            // Only for notifications with duration=0
-}
-```
 
 ## 📝 Notes
 
 - The blueprint uses "restart" mode to avoid duplicates when multiple alerts arrive
 - Custom apps are published to MQTT topic `{prefix}/custom/dpc_alert`
 - Notifications are published to MQTT topic `{prefix}/notify`
-- If there are multiple active alerts, they will be displayed in sequence
-- Rainbow text and ripple effects are configurable with level thresholds (default: rainbow disabled, ripple at level 3+)
+- Multiple active alerts are displayed in compact format on one screen (e.g. "IDR3-TMP4")
+- Rainbow text effect is configurable with level threshold (default: disabled)
 - Rainbow and color are mutually exclusive per AWTRIX API (rainbow takes precedence when enabled)
-- Icon files should be in GIF format and uploaded to AWTRIX `/ICONS/` folder
+- Icon file should be in GIF format and uploaded to AWTRIX `/ICONS/` folder
 - Notifications with duration=0 automatically use hold mode (manual dismiss required)
-- Home Assistant's Jinja2 sandbox restrictions: Uses `dict()` constructor instead of `.update()` method
+- Test mode allows manual testing without waiting for real DPC alerts
 
 ## 🤝 Contributing
 

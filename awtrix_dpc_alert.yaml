@@ -26,13 +26,10 @@ blueprint:
     - **IDG** = Rischio Idrogeologico (Hydrogeological)\n
     - Number = criticality level (1-4)\n
     Color is based on highest alert level present.\n\n
-    ## 📦 RECOMMENDED ICONS\n
-    Upload these icons to your AWTRIX for best results:\n
-    - `dpc-idraulico` (63) - Hydraulic risk (floods, overflows)\n
-    - `dpc-temporali` (49299) - Thunderstorm risk (lightning, strong winds)\n
-    - `dpc-idrogeologico` (42639) - Hydrogeological risk (landslides, mudflows)\n
-    - `dpc-warning` (16754) - Generic alert icon (fallback)\n\n
-    Get icons from [LaMetric Icons](https://developer.lametric.com/icons) or create custom GIF files.\n
+    ## 📦 RECOMMENDED ICON\n
+    Upload this icon to your AWTRIX for best results:\n
+    - `dpc-warning` (16754) - Alert icon for all risk types\n\n
+    Get the icon from [LaMetric Icons](https://developer.lametric.com/icons) or create a custom GIF file.\n
     See [Icons Upload Guide](https://github.com/Raythekool/ha-awtrix-dpc-alert/blob/main/ICONS_UPLOAD.md) for automated upload script.\n\n
     ## ⚙️ CONFIGURATION OPTIONS\n
     - **Alert Level Threshold**: Filter by minimum criticality (0-4)\n
@@ -40,7 +37,7 @@ blueprint:
     - **Rainbow Text Level**: Enable rainbow animation at specified level (0=disabled)\n
     - **Sound Settings**: Optional audio with minimum level threshold\n
     - **Display Mode**: Custom App (stays visible), Notification (temporary pop-up), or Both\n
-    - **Custom Icons**: Override default icon names for each risk type\n
+    - **Custom Icon**: Override default icon name\n
     - **Test Mode**: Enable manual testing with configurable alert levels\n\n
     ## 🔗 MORE INFO\n
     Documentation: https://github.com/Raythekool/ha-awtrix-dpc-alert\n
@@ -110,33 +107,9 @@ blueprint:
           mode: slider
       default: 10
 
-    icon_idraulico:
-      name: Hydraulic Risk Icon
-      description: "Icon for hydraulic risk (floods, overflows).\n
-        Filename: dpc-idraulico (LaMetric ID: 63)"
-      selector:
-        text: {}
-      default: "dpc-idraulico"
-
-    icon_temporali:
-      name: Storm Risk Icon
-      description: "Icon for storm risk.\n
-        Filename: dpc-temporali (LaMetric ID: 49299)"
-      selector:
-        text: {}
-      default: "dpc-temporali"
-
-    icon_idrogeologico:
-      name: Hydrogeological Risk Icon
-      description: "Icon for hydrogeological risk (landslides, mudslides).\n
-        Filename: dpc-idrogeologico (LaMetric ID: 42639)"
-      selector:
-        text: {}
-      default: "dpc-idrogeologico"
-
     icon_warning:
-      name: Generic Alert Icon
-      description: "Generic icon for other alert types.\n
+      name: Alert Icon
+      description: "Icon for all alert types.\n
         Filename: dpc-warning (LaMetric ID: 16754)"
       selector:
         text: {}
@@ -215,7 +188,7 @@ blueprint:
       description: |
         Enable test mode to manually trigger alerts.
         When enabled, automation ignores DPC sensors and uses test levels instead.
-        Perfect for verifying icons, colors, and display settings.
+        Perfect for verifying icon, colors, and display settings.
       selector:
         boolean: {}
       default: false
@@ -284,9 +257,6 @@ variables:
   warning_level: !input warning_level
   message_duration: !input message_duration
   notification_duration: !input notification_duration
-  icon_idraulico: !input icon_idraulico
-  icon_temporali: !input icon_temporali
-  icon_idrogeologico: !input icon_idrogeologico
   icon_warning: !input icon_warning
   enable_sound: !input enable_sound
   sound_level: !input sound_level
@@ -322,7 +292,7 @@ variables:
 
   # Unified compact payload for both app and notification
   compact_payload: |
-    {%- set ns = namespace(parts=[], max_level=0, first_icon='') %}
+    {%- set ns = namespace(parts=[], max_level=0) %}
     
     {%- if enable_test_mode %}
       {# TEST MODE: Use test levels #}
@@ -331,9 +301,6 @@ variables:
         {%- if test_level_idraulico > ns.max_level %}
           {%- set ns.max_level = test_level_idraulico %}
         {%- endif %}
-        {%- if ns.first_icon == '' %}
-          {%- set ns.first_icon = icon_idraulico %}
-        {%- endif %}
       {%- endif %}
       
       {%- if test_level_temporali > 0 %}
@@ -341,18 +308,12 @@ variables:
         {%- if test_level_temporali > ns.max_level %}
           {%- set ns.max_level = test_level_temporali %}
         {%- endif %}
-        {%- if ns.first_icon == '' %}
-          {%- set ns.first_icon = icon_temporali %}
-        {%- endif %}
       {%- endif %}
       
       {%- if test_level_idrogeologico > 0 %}
         {%- set ns.parts = ns.parts + ['IDG' ~ test_level_idrogeologico|string] %}
         {%- if test_level_idrogeologico > ns.max_level %}
           {%- set ns.max_level = test_level_idrogeologico %}
-        {%- endif %}
-        {%- if ns.first_icon == '' %}
-          {%- set ns.first_icon = icon_idrogeologico %}
         {%- endif %}
       {%- endif %}
     {%- else %}
@@ -362,30 +323,19 @@ variables:
           {%- set level = state_attr(sensor, 'level')|int(0) %}
           {%- set risk = state_attr(sensor, 'risk') %}
           
-          {%- set icon = icon_warning %}
-          {%- set risk_type = 'warning' %}
           {%- set abbr = 'ALL' %}
           
           {%- if 'idraulico' in risk|lower %}
-            {%- set icon = icon_idraulico %}
-            {%- set risk_type = 'idraulico' %}
             {%- set abbr = 'IDR' %}
           {%- elif 'temporali' in risk|lower %}
-            {%- set icon = icon_temporali %}
-            {%- set risk_type = 'temporali' %}
             {%- set abbr = 'TMP' %}
           {%- elif 'idrogeologico' in risk|lower %}
-            {%- set icon = icon_idrogeologico %}
-            {%- set risk_type = 'idrogeologico' %}
             {%- set abbr = 'IDG' %}
           {%- endif %}
           
           {%- set ns.parts = ns.parts + [abbr ~ level|string] %}
           {%- if level > ns.max_level %}
             {%- set ns.max_level = level %}
-          {%- endif %}
-          {%- if ns.first_icon == '' %}
-            {%- set ns.first_icon = icon %}
           {%- endif %}
         {%- endif %}
       {%- endfor %}
@@ -396,7 +346,7 @@ variables:
       
       {%- set payload = {
         'text': compact_text,
-        'icon': ns.first_icon,
+        'icon': icon_warning,
         'stack': false
       } %}
       

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Script to download icons from LaMetric and upload them to AWTRIX device.
+Script to download icon from LaMetric and upload it to AWTRIX device.
 
-This script helps you easily upload the necessary icons for the DPC Alert blueprint
+This script helps you easily upload the necessary icon for the DPC Alert blueprint
 to your AWTRIX 3 device.
 """
 
@@ -17,11 +17,8 @@ from pathlib import Path
 from typing import List, Tuple
 
 
-# Default recommended icons for DPC alerts
-DEFAULT_ICONS = {
-    "dpc-idraulico": 63,
-    "dpc-temporali": 49299,
-    "dpc-idrogeologico": 42639,
+# Default recommended icon for DPC alerts
+DEFAULT_ICON = {
     "dpc-warning": 16754,
 }
 
@@ -93,7 +90,6 @@ def download_icon(icon_id: int) -> Tuple[bytes, str]:
     """
     # Try GIF first (preferred by AWTRIX), then PNG
     for ext in ['gif', 'png']:
-        # FIXED: Use the 8x8 version without _icon_thumb suffix
         url = f"https://developer.lametric.com/content/apps/icon_thumbs/{icon_id}.{ext}"
         try:
             with urllib.request.urlopen(url, timeout=REQUEST_TIMEOUT) as response:
@@ -194,8 +190,8 @@ def process_icon(device_ip: str, icon_name: str, icon_id: int) -> bool:
 def main():
     """Main function."""
     parser = argparse.ArgumentParser(
-        description='Download icons from LaMetric and upload them to AWTRIX device.',
-        epilog='Example: %(prog)s 192.168.1.100 --default-icons'
+        description='Download icon from LaMetric and upload it to AWTRIX device.',
+        epilog='Example: %(prog)s 192.168.1.100'
     )
     
     parser.add_argument(
@@ -207,7 +203,8 @@ def main():
     parser.add_argument(
         '--default-icons',
         action='store_true',
-        help='Upload the default recommended icons for DPC alerts'
+        default=True,
+        help='Upload the default recommended icon for DPC alerts (default behavior)'
     )
     
     parser.add_argument(
@@ -218,21 +215,7 @@ def main():
         help='Add a custom icon (can be used multiple times). Example: --icon my-icon 12345'
     )
     
-    parser.add_argument(
-        '--list-default',
-        action='store_true',
-        help='List the default recommended icons and exit'
-    )
-    
     args = parser.parse_args()
-    
-    # List default icons and exit
-    if args.list_default:
-        print("Default recommended icons for DPC alerts:")
-        print()
-        for name, icon_id in DEFAULT_ICONS.items():
-            print(f"  {name:20} - ID: {icon_id}")
-        return 0
     
     # Prompt for device IP if not provided
     if not args.device_ip:
@@ -253,10 +236,9 @@ def main():
     # Build list of icons to upload
     icons_to_upload = {}
     
-    if args.default_icons:
-        icons_to_upload.update(DEFAULT_ICONS)
-    
+    # Default behavior: upload default icon unless custom icons are specified
     if args.icon:
+        # Custom icons specified, only upload those
         for name, icon_id in args.icon:
             try:
                 icon_id_int = int(icon_id)
@@ -267,15 +249,12 @@ def main():
             except ValueError:
                 print(f"Error: Icon ID must be a positive integer, got '{icon_id}'")
                 return 1
-    
-    # Validate we have icons to upload
-    if not icons_to_upload:
-        print("Error: No icons specified. Use --default-icons or --icon to specify icons to upload.")
-        print("Run with --help for more information.")
-        return 1
+    else:
+        # No custom icons, use default
+        icons_to_upload.update(DEFAULT_ICON)
     
     # Process all icons
-    print(f"Uploading {len(icons_to_upload)} icon(s) to AWTRIX at {args.device_ip}")
+    print(f"Uploading icon to AWTRIX at {args.device_ip}")
     print("=" * 60)
     
     success_count = 0
@@ -286,7 +265,7 @@ def main():
     # Summary
     print()
     print("=" * 60)
-    print(f"Summary: {success_count}/{len(icons_to_upload)} icons uploaded successfully")
+    print(f"Summary: {success_count}/{len(icons_to_upload)} icon(s) uploaded successfully")
     
     return 0 if success_count == len(icons_to_upload) else 1
 
