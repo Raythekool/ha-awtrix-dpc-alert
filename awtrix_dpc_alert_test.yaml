@@ -1,12 +1,13 @@
 blueprint:
   name: "AWTRIX DPC Alert - Test Notification 🧪"
   description:
-    "Sends a test notification to AWTRIX devices to verify DPC alert configuration.\n\n
+    "Sends test notifications to AWTRIX devices to verify DPC alert configuration.\n\n
     This blueprint creates a manually-triggered automation for testing alert displays
     before real DPC alerts arrive. Essential for validating your setup.\n\n
     ## 🎯 Purpose\n\n
     - Verify icons are correctly uploaded and display properly\n\n
     - Test different criticality levels (1-4) with accurate colors and effects\n\n
+    - Test multiple simultaneous alerts (like real scenarios)\n\n
     - Validate sound notifications at different thresholds\n\n
     - Test both Custom App (persistent) and Notification (temporary) display modes\n\n
     - Confirm rainbow text effects work as configured\n\n
@@ -14,18 +15,20 @@ blueprint:
     ## 📝 How to Use\n\n
     1. Create automation from this blueprint\n\n
     2. Select your AWTRIX device(s)\n\n
-    3. Choose a test criticality level (1-4)\n\n
+    3. Set test level for each risk type (0 = disabled, 1-4 = criticality level)\n\n
     4. Configure durations, effects, and display mode\n\n
-    5. Save and trigger manually to send test notification\n\n
+    5. Save and trigger manually to send test notification(s)\n\n
     6. Verify display, colors, icons, sound, and effects\n\n
     7. Adjust settings as needed and test again\n\n\n
     ## ✨ Features\n\n
-    - Test all 4 criticality levels with proper color coding\n\n
+    - Test each risk type independently (hydraulic, storm, hydrogeological)\n\n
+    - Test multiple alerts simultaneously\n\n
+    - All 4 criticality levels with proper color coding\n\n
     - Configurable rainbow text effect (minimum level threshold)\n\n
     - Choose display mode: Custom App, Notification, or Both\n\n
     - Separate durations for custom apps and notifications\n\n
     - Hold mode support (notification duration = 0)\n\n
-    - Optional sound notifications\n\n
+    - Optional sound notifications with level threshold\n\n
     - Test payload visible in trace for debugging"
   domain: automation
   input:
@@ -39,10 +42,124 @@ blueprint:
           model: AWTRIX 3
           multiple: true
 
-    test_level:
-      name: Test Level
+    test_level_idraulico:
+      name: Hydraulic Risk Test Level 🌊
       description: |
-        Select the criticality level to test:
+        Criticality level for hydraulic risk test (0 = disabled):
+        0 = Disabled (no test for this risk)
+        1 = Green (Ordinary)
+        2 = Yellow (Moderate)
+        3 = Orange (High)
+        4 = Red (Extreme)
+      selector:
+        number:
+          min: 0
+          max: 4
+          mode: box
+          step: 1
+      default: 0
+
+    test_level_temporali:
+      name: Storm Risk Test Level ⚡
+      description: |
+        Criticality level for storm risk test (0 = disabled):
+        0 = Disabled (no test for this risk)
+        1 = Green (Ordinary)
+        2 = Yellow (Moderate)
+        3 = Orange (High)
+        4 = Red (Extreme)
+      selector:
+        number:
+          min: 0
+          max: 4
+          mode: box
+          step: 1
+      default: 3
+
+    test_level_idrogeologico:
+      name: Hydrogeological Risk Test Level 🏔️
+      description: |
+        Criticality level for hydrogeological risk test (0 = disabled):
+        0 = Disabled (no test for this risk)
+        1 = Green (Ordinary)
+        2 = Yellow (Moderate)
+        3 = Orange (High)
+        4 = Red (Extreme)
+      selector:
+        number:
+          min: 0
+          max: 4
+          mode: box
+          step: 1
+      default: 0
+
+    message_duration:
+      name: Message Duration ⏱️
+      description: How long the message should remain on screen (in seconds). 0 = use global time
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: sec
+          step: 1
+          mode: slider
+      default: 20
+
+    notification_duration:
+      name: Notification Duration 🔔
+      description: How long the notification should remain visible (0 = hold until manual dismissal)
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: sec
+          step: 1
+          mode: slider
+      default: 0
+
+    icon_idraulico:
+      name: Hydraulic Risk Icon
+      description: "Icon for hydraulic risk (floods, overflows).\n
+        Filename: dpc-idraulico (LaMetric ID: 18191)"
+      selector:
+        text: {}
+      default: "dpc-idraulico"
+
+    icon_temporali:
+      name: Storm Risk Icon
+      description: "Icon for storm risk.\n
+        Filename: dpc-temporali (LaMetric ID: 49299)"
+      selector:
+        text: {}
+      default: "dpc-temporali"
+
+    icon_idrogeologico:
+      name: Hydrogeological Risk Icon
+      description: "Icon for hydrogeological risk (landslides, mudslides).\n
+        Filename: dpc-idrogeologico (LaMetric ID: 42639)"
+      selector:
+        text: {}
+      default: "dpc-idrogeologico"
+
+    icon_warning:
+      name: Generic Alert Icon
+      description: "Generic icon for other alert types.\n
+        Filename: dpc-warning (LaMetric ID: 16754)"
+      selector:
+        text: {}
+      default: "dpc-warning"
+
+    enable_sound:
+      name: Enable Sound 🔊
+      description: Play a sound when an alert arrives
+      selector:
+        boolean: {}
+      default: false
+
+    sound_level:
+      name: Minimum Level for Sound
+      description: |
+        Play sound only for alerts of this level or higher:
         1 = Green (Ordinary)
         2 = Yellow (Moderate)
         3 = Orange (High)
@@ -55,47 +172,12 @@ blueprint:
           step: 1
       default: 3
 
-    message_duration:
-      name: Message Duration ⏱️
-      description: How long the message should remain on screen (in seconds)
-      selector:
-        number:
-          min: 0
-          max: 300
-          unit_of_measurement: sec
-          step: 1
-          mode: slider
-      default: 20
-
-    notification_duration:
-      name: Notification Duration 🔔
-      description: How long the notification should remain visible (0 = hold until dismissed)
-      selector:
-        number:
-          min: 0
-          max: 300
-          unit_of_measurement: sec
-          step: 1
-          mode: slider
-      default: 0
-
-    icon_test:
-      name: Test Icon
-      description: Icon filename to display in the test (without extension)
-      selector:
-        text: {}
-      default: "dpc-warning"
-
-    enable_sound:
-      name: Test with Sound 🔊
-      description: Play a sound with the test notification
-      selector:
-        boolean: {}
-      default: false
-
     sound_file:
       name: Sound File
-      description: Audio file name to play (without extension)
+      description: |
+        Name of the audio file to play (without extension).
+        Examples: alarm, doorbell, notification, etc.
+        See the AWTRIX documentation for available sounds.
       selector:
         text: {}
       default: "alarm"
@@ -139,11 +221,17 @@ mode: single
 variables:
   device_ids: !input awtrix
   app_topic: "dpc_alert"
-  test_level: !input test_level
+  test_level_idraulico: !input test_level_idraulico
+  test_level_temporali: !input test_level_temporali
+  test_level_idrogeologico: !input test_level_idrogeologico
   message_duration: !input message_duration
   notification_duration: !input notification_duration
-  icon_test: !input icon_test
+  icon_idraulico: !input icon_idraulico
+  icon_temporali: !input icon_temporali
+  icon_idrogeologico: !input icon_idrogeologico
+  icon_warning: !input icon_warning
   enable_sound: !input enable_sound
+  sound_level: !input sound_level
   sound_file: !input sound_file
   rainbow_level: !input rainbow_level
   display_mode: !input display_mode
@@ -170,6 +258,7 @@ variables:
     {%- endfor %}
     {{ ns.devices | reject('match','unavailable') | list }}
 
+  # Color map for criticality levels (same as main blueprint)
   color_map:
     0: "#0080FF"
     1: "#00FF00"
@@ -177,44 +266,118 @@ variables:
     3: "#FF6000"
     4: "#FF0000"
 
+  # Criticality level names
   level_names:
+    0: "None"
     1: "Ordinaria"
     2: "Moderata"
     3: "Elevata"
     4: "Estrema"
 
-  test_payload: |
-    {%- set is_notification = display_mode in ['notification', 'both'] %}
-    {%- set duration_value = notification_duration if is_notification else message_duration %}
+  # Risk type names
+  risk_names:
+    idraulico: "Idraulico"
+    temporali: "Temporali"
+    idrogeologico: "Idrogeologico"
+
+  # Build payload with all active test alerts (same logic as main blueprint)
+  alerts: |
+    {%- set ns = namespace(alerts=[]) %}
     
-    {%- set alert_obj = {
-      'text': 'TEST DPC Alert - Livello ' ~ level_names[test_level],
-      'icon': icon_test,
-      'stack': false
-    } %}
-    
-    {#- Only set color if rainbow is not active -#}
-    {%- if rainbow_level == 0 or test_level < rainbow_level %}
-      {%- set alert_obj = dict(alert_obj, color=color_map[test_level]) %}
+    {# Hydraulic risk test #}
+    {%- if test_level_idraulico > 0 %}
+      {%- set level = test_level_idraulico %}
+      {%- set duration_value = message_duration if display_mode == 'app' else notification_duration %}
+      {%- set alert_obj = {
+        'icon': icon_idraulico,
+        'text': 'TEST Rischio ' ~ risk_names.idraulico ~ ' - Livello ' ~ level_names[level],
+        'stack': false
+      } %}
+      {%- if rainbow_level == 0 or level < rainbow_level %}
+        {%- set alert_obj = dict(alert_obj, color=color_map[level]) %}
+      {%- endif %}
+      {%- if rainbow_level > 0 and level >= rainbow_level %}
+        {%- set alert_obj = dict(alert_obj, rainbow=true) %}
+      {%- endif %}
+      {%- if duration_value > 0 %}
+        {%- set alert_obj = dict(alert_obj, duration=duration_value) %}
+      {%- endif %}
+      {%- if enable_sound and level >= sound_level %}
+        {%- set alert_obj = dict(alert_obj, sound=sound_file) %}
+      {%- endif %}
+      {%- if display_mode in ['notification', 'both'] and notification_duration == 0 %}
+        {%- set alert_obj = dict(alert_obj, hold=true) %}
+      {%- endif %}
+      {%- set ns.alerts = ns.alerts + [alert_obj] %}
     {%- endif %}
     
-    {%- if rainbow_level > 0 and test_level >= rainbow_level %}
-      {%- set alert_obj = dict(alert_obj, rainbow=true) %}
+    {# Storm risk test #}
+    {%- if test_level_temporali > 0 %}
+      {%- set level = test_level_temporali %}
+      {%- set duration_value = message_duration if display_mode == 'app' else notification_duration %}
+      {%- set alert_obj = {
+        'icon': icon_temporali,
+        'text': 'TEST Rischio ' ~ risk_names.temporali ~ ' - Livello ' ~ level_names[level],
+        'stack': false
+      } %}
+      {%- if rainbow_level == 0 or level < rainbow_level %}
+        {%- set alert_obj = dict(alert_obj, color=color_map[level]) %}
+      {%- endif %}
+      {%- if rainbow_level > 0 and level >= rainbow_level %}
+        {%- set alert_obj = dict(alert_obj, rainbow=true) %}
+      {%- endif %}
+      {%- if duration_value > 0 %}
+        {%- set alert_obj = dict(alert_obj, duration=duration_value) %}
+      {%- endif %}
+      {%- if enable_sound and level >= sound_level %}
+        {%- set alert_obj = dict(alert_obj, sound=sound_file) %}
+      {%- endif %}
+      {%- if display_mode in ['notification', 'both'] and notification_duration == 0 %}
+        {%- set alert_obj = dict(alert_obj, hold=true) %}
+      {%- endif %}
+      {%- set ns.alerts = ns.alerts + [alert_obj] %}
     {%- endif %}
     
-    {%- if duration_value > 0 %}
-      {%- set alert_obj = dict(alert_obj, duration=duration_value) %}
+    {# Hydrogeological risk test #}
+    {%- if test_level_idrogeologico > 0 %}
+      {%- set level = test_level_idrogeologico %}
+      {%- set duration_value = message_duration if display_mode == 'app' else notification_duration %}
+      {%- set alert_obj = {
+        'icon': icon_idrogeologico,
+        'text': 'TEST Rischio ' ~ risk_names.idrogeologico ~ ' - Livello ' ~ level_names[level],
+        'stack': false
+      } %}
+      {%- if rainbow_level == 0 or level < rainbow_level %}
+        {%- set alert_obj = dict(alert_obj, color=color_map[level]) %}
+      {%- endif %}
+      {%- if rainbow_level > 0 and level >= rainbow_level %}
+        {%- set alert_obj = dict(alert_obj, rainbow=true) %}
+      {%- endif %}
+      {%- if duration_value > 0 %}
+        {%- set alert_obj = dict(alert_obj, duration=duration_value) %}
+      {%- endif %}
+      {%- if enable_sound and level >= sound_level %}
+        {%- set alert_obj = dict(alert_obj, sound=sound_file) %}
+      {%- endif %}
+      {%- if display_mode in ['notification', 'both'] and notification_duration == 0 %}
+        {%- set alert_obj = dict(alert_obj, hold=true) %}
+      {%- endif %}
+      {%- set ns.alerts = ns.alerts + [alert_obj] %}
     {%- endif %}
     
-    {%- if enable_sound %}
-      {%- set alert_obj = dict(alert_obj, sound=sound_file) %}
+    {{ ns.alerts }}
+
+  payload: |
+    {%- set alert_list = alerts %}
+    {%- if alert_list|length > 0 %}
+      {%- if alert_list|length == 1 %}
+        {{ alert_list[0]|tojson }}
+      {%- else %}
+        {{ alert_list|tojson }}
+      {%- endif %}
+    {%- else %}
+      {}
     {%- endif %}
-    
-    {%- if is_notification and notification_duration == 0 %}
-      {%- set alert_obj = dict(alert_obj, hold=true) %}
-    {%- endif %}
-    
-    {{ alert_obj|tojson }}
 
 trigger: []
 
@@ -229,17 +392,30 @@ action:
       - repeat:
           for_each: "{{ devices_topics }}"
           sequence:
+            # Remove previous app (same as main blueprint)
             - service: mqtt.publish
               data:
                 qos: 0
                 retain: false
                 topic: "{{ repeat.item }}"
-                payload: "{{ test_payload }}"
+                payload: ""
+
+            # Publish new alerts (if present)
+            - if:
+                - condition: template
+                  value_template: "{{ alerts|length > 0 }}"
+              then:
+                - service: mqtt.publish
+                  data:
+                    qos: 0
+                    retain: false
+                    topic: "{{ repeat.item }}"
+                    payload: "{{ payload }}"
 
   # Send AWTRIX notification if mode is 'notification' or 'both'
   - if:
       - condition: template
-        value_template: "{{ display_mode in ['notification', 'both'] }}"
+        value_template: "{{ display_mode in ['notification', 'both'] and alerts|length > 0 }}"
     then:
       - repeat:
           for_each: "{{ notify_topics }}"
@@ -249,9 +425,9 @@ action:
                 qos: 0
                 retain: false
                 topic: "{{ repeat.item }}"
-                payload: "{{ test_payload }}"
+                payload: "{{ payload }}"
 
   - service: system_log.write
     data:
-      message: "DPC Alert test notification sent to {{ devices_topics|length }} AWTRIX device(s) - Level {{ test_level }} - Mode: {{ display_mode }}"
+      message: "DPC Alert test notification sent to {{ devices_topics|length }} AWTRIX device(s) - {{ alerts|length }} alert(s) - Mode: {{ display_mode }}"
       level: info
