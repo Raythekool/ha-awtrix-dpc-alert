@@ -8,6 +8,7 @@ blueprint:
     - Verify icons are correctly uploaded and display properly\n\n
     - Test different criticality levels (1-4) with accurate colors and effects\n\n
     - Test multiple simultaneous alerts (like real scenarios)\n\n
+    - Test compact app display (e.g. \"IDR3-TMP4\") and detailed notifications\n\n
     - Validate sound notifications at different thresholds\n\n
     - Test both Custom App (persistent) and Notification (temporary) display modes\n\n
     - Confirm rainbow text effects work as configured\n\n
@@ -23,6 +24,8 @@ blueprint:
     ## ✨ Features\n\n
     - Test each risk type independently (hydraulic, storm, hydrogeological)\n\n
     - Test multiple alerts simultaneously\n\n
+    - Compact app format: \"IDR3-TMP4\" (all alerts on one screen)\n\n
+    - Detailed notification format: Full scrolling text\n\n
     - All 4 criticality levels with proper color coding\n\n
     - Configurable rainbow text effect (minimum level threshold)\n\n
     - Choose display mode: Custom App, Notification, or Both\n\n
@@ -120,7 +123,7 @@ blueprint:
     icon_idraulico:
       name: Hydraulic Risk Icon
       description: "Icon for hydraulic risk (floods, overflows).\n
-        Filename: dpc-idraulico (LaMetric ID: 18191)"
+        Filename: dpc-idraulico (LaMetric ID: 63)"
       selector:
         text: {}
       default: "dpc-idraulico"
@@ -202,9 +205,9 @@ blueprint:
       name: Display Mode 📺
       description: |
         Choose how to display the test on AWTRIX:
-        - Custom App: Persistent display until cleared
-        - Notification: Temporary pop-up that auto-dismisses
-        - Both: Send both custom app and notification
+        - Custom App: Persistent compact display (e.g. "IDR3-TMP4")
+        - Notification: Temporary detailed pop-up with full text
+        - Both: Persistent compact app + temporary detailed notification
       selector:
         select:
           options:
@@ -280,100 +283,127 @@ variables:
     temporali: "Temporali"
     idrogeologico: "Idrogeologico"
 
-  # Build payload with all active test alerts (same logic as main blueprint)
-  alerts: |
+  # Risk abbreviations for compact display
+  risk_abbr:
+    idraulico: "IDR"
+    temporali: "TMP"
+    idrogeologico: "IDG"
+
+  # Collect active test alerts data
+  active_test_alerts: |
     {%- set ns = namespace(alerts=[]) %}
     
     {# Hydraulic risk test #}
     {%- if test_level_idraulico > 0 %}
-      {%- set level = test_level_idraulico %}
-      {%- set duration_value = message_duration if display_mode == 'app' else notification_duration %}
-      {%- set alert_obj = {
-        'icon': icon_idraulico,
-        'text': 'TEST Rischio ' ~ risk_names.idraulico ~ ' - Livello ' ~ level_names[level],
-        'stack': false
+      {%- set alert_data = {
+        'level': test_level_idraulico,
+        'risk_type': 'idraulico',
+        'risk_name': risk_names.idraulico,
+        'icon': icon_idraulico
       } %}
-      {%- if rainbow_level == 0 or level < rainbow_level %}
-        {%- set alert_obj = dict(alert_obj, color=color_map[level]) %}
-      {%- endif %}
-      {%- if rainbow_level > 0 and level >= rainbow_level %}
-        {%- set alert_obj = dict(alert_obj, rainbow=true) %}
-      {%- endif %}
-      {%- if duration_value > 0 %}
-        {%- set alert_obj = dict(alert_obj, duration=duration_value) %}
-      {%- endif %}
-      {%- if enable_sound and level >= sound_level %}
-        {%- set alert_obj = dict(alert_obj, sound=sound_file) %}
-      {%- endif %}
-      {%- if display_mode in ['notification', 'both'] and notification_duration == 0 %}
-        {%- set alert_obj = dict(alert_obj, hold=true) %}
-      {%- endif %}
-      {%- set ns.alerts = ns.alerts + [alert_obj] %}
+      {%- set ns.alerts = ns.alerts + [alert_data] %}
     {%- endif %}
     
     {# Storm risk test #}
     {%- if test_level_temporali > 0 %}
-      {%- set level = test_level_temporali %}
-      {%- set duration_value = message_duration if display_mode == 'app' else notification_duration %}
-      {%- set alert_obj = {
-        'icon': icon_temporali,
-        'text': 'TEST Rischio ' ~ risk_names.temporali ~ ' - Livello ' ~ level_names[level],
-        'stack': false
+      {%- set alert_data = {
+        'level': test_level_temporali,
+        'risk_type': 'temporali',
+        'risk_name': risk_names.temporali,
+        'icon': icon_temporali
       } %}
-      {%- if rainbow_level == 0 or level < rainbow_level %}
-        {%- set alert_obj = dict(alert_obj, color=color_map[level]) %}
-      {%- endif %}
-      {%- if rainbow_level > 0 and level >= rainbow_level %}
-        {%- set alert_obj = dict(alert_obj, rainbow=true) %}
-      {%- endif %}
-      {%- if duration_value > 0 %}
-        {%- set alert_obj = dict(alert_obj, duration=duration_value) %}
-      {%- endif %}
-      {%- if enable_sound and level >= sound_level %}
-        {%- set alert_obj = dict(alert_obj, sound=sound_file) %}
-      {%- endif %}
-      {%- if display_mode in ['notification', 'both'] and notification_duration == 0 %}
-        {%- set alert_obj = dict(alert_obj, hold=true) %}
-      {%- endif %}
-      {%- set ns.alerts = ns.alerts + [alert_obj] %}
+      {%- set ns.alerts = ns.alerts + [alert_data] %}
     {%- endif %}
     
     {# Hydrogeological risk test #}
     {%- if test_level_idrogeologico > 0 %}
-      {%- set level = test_level_idrogeologico %}
-      {%- set duration_value = message_duration if display_mode == 'app' else notification_duration %}
-      {%- set alert_obj = {
-        'icon': icon_idrogeologico,
-        'text': 'TEST Rischio ' ~ risk_names.idrogeologico ~ ' - Livello ' ~ level_names[level],
-        'stack': false
+      {%- set alert_data = {
+        'level': test_level_idrogeologico,
+        'risk_type': 'idrogeologico',
+        'risk_name': risk_names.idrogeologico,
+        'icon': icon_idrogeologico
       } %}
-      {%- if rainbow_level == 0 or level < rainbow_level %}
-        {%- set alert_obj = dict(alert_obj, color=color_map[level]) %}
-      {%- endif %}
-      {%- if rainbow_level > 0 and level >= rainbow_level %}
-        {%- set alert_obj = dict(alert_obj, rainbow=true) %}
-      {%- endif %}
-      {%- if duration_value > 0 %}
-        {%- set alert_obj = dict(alert_obj, duration=duration_value) %}
-      {%- endif %}
-      {%- if enable_sound and level >= sound_level %}
-        {%- set alert_obj = dict(alert_obj, sound=sound_file) %}
-      {%- endif %}
-      {%- if display_mode in ['notification', 'both'] and notification_duration == 0 %}
-        {%- set alert_obj = dict(alert_obj, hold=true) %}
-      {%- endif %}
-      {%- set ns.alerts = ns.alerts + [alert_obj] %}
+      {%- set ns.alerts = ns.alerts + [alert_data] %}
     {%- endif %}
     
     {{ ns.alerts }}
 
-  payload: |
-    {%- set alert_list = alerts %}
+  # Build compact payload for Custom App (single screen)
+  app_payload: |
+    {%- set alert_list = active_test_alerts %}
     {%- if alert_list|length > 0 %}
-      {%- if alert_list|length == 1 %}
-        {{ alert_list[0]|tojson }}
+      {%- set max_level = alert_list | map(attribute='level') | max %}
+      {%- set compact_parts = [] %}
+      {%- for alert in alert_list %}
+        {%- set abbr = risk_abbr.get(alert.risk_type, 'TST') %}
+        {%- set compact_parts = compact_parts + [abbr ~ alert.level|string] %}
+      {%- endfor %}
+      {%- set compact_text = compact_parts | join('-') %}
+      
+      {%- set app_obj = {
+        'text': compact_text,
+        'icon': alert_list[0].icon,
+        'stack': false
+      } %}
+      
+      {%- if message_duration > 0 %}
+        {%- set app_obj = dict(app_obj, duration=message_duration) %}
+      {%- endif %}
+      
+      {%- if rainbow_level == 0 or max_level < rainbow_level %}
+        {%- set app_obj = dict(app_obj, color=color_map[max_level]) %}
+      {%- endif %}
+      
+      {%- if rainbow_level > 0 and max_level >= rainbow_level %}
+        {%- set app_obj = dict(app_obj, rainbow=true) %}
+      {%- endif %}
+      
+      {%- if enable_sound and max_level >= sound_level %}
+        {%- set app_obj = dict(app_obj, sound=sound_file) %}
+      {%- endif %}
+      
+      {{ app_obj|tojson }}
+    {%- else %}
+      {}
+    {%- endif %}
+
+  # Build detailed payload for Notifications (full text, array)
+  notification_payload: |
+    {%- set alert_list = active_test_alerts %}
+    {%- if alert_list|length > 0 %}
+      {%- set ns = namespace(notifs=[]) %}
+      {%- for alert in alert_list %}
+        {%- set notif_obj = {
+          'icon': alert.icon,
+          'text': 'TEST Rischio ' ~ alert.risk_name ~ ' - Livello ' ~ level_names[alert.level],
+          'stack': false
+        } %}
+        
+        {%- if notification_duration > 0 %}
+          {%- set notif_obj = dict(notif_obj, duration=notification_duration) %}
+        {%- else %}
+          {%- set notif_obj = dict(notif_obj, hold=true) %}
+        {%- endif %}
+        
+        {%- if rainbow_level == 0 or alert.level < rainbow_level %}
+          {%- set notif_obj = dict(notif_obj, color=color_map[alert.level]) %}
+        {%- endif %}
+        
+        {%- if rainbow_level > 0 and alert.level >= rainbow_level %}
+          {%- set notif_obj = dict(notif_obj, rainbow=true) %}
+        {%- endif %}
+        
+        {%- if enable_sound and alert.level >= sound_level %}
+          {%- set notif_obj = dict(notif_obj, sound=sound_file) %}
+        {%- endif %}
+        
+        {%- set ns.notifs = ns.notifs + [notif_obj] %}
+      {%- endfor %}
+      
+      {%- if ns.notifs|length == 1 %}
+        {{ ns.notifs[0]|tojson }}
       {%- else %}
-        {{ alert_list|tojson }}
+        {{ ns.notifs|tojson }}
       {%- endif %}
     {%- else %}
       {}
@@ -400,22 +430,22 @@ action:
                 topic: "{{ repeat.item }}"
                 payload: ""
 
-            # Publish new alerts (if present)
+            # Publish compact app (if alerts present)
             - if:
                 - condition: template
-                  value_template: "{{ alerts|length > 0 }}"
+                  value_template: "{{ active_test_alerts|length > 0 }}"
               then:
                 - service: mqtt.publish
                   data:
                     qos: 0
                     retain: false
                     topic: "{{ repeat.item }}"
-                    payload: "{{ payload }}"
+                    payload: "{{ app_payload }}"
 
   # Send AWTRIX notification if mode is 'notification' or 'both'
   - if:
       - condition: template
-        value_template: "{{ display_mode in ['notification', 'both'] and alerts|length > 0 }}"
+        value_template: "{{ display_mode in ['notification', 'both'] and active_test_alerts|length > 0 }}"
     then:
       - repeat:
           for_each: "{{ notify_topics }}"
@@ -425,9 +455,9 @@ action:
                 qos: 0
                 retain: false
                 topic: "{{ repeat.item }}"
-                payload: "{{ payload }}"
+                payload: "{{ notification_payload }}"
 
   - service: system_log.write
     data:
-      message: "DPC Alert test notification sent to {{ devices_topics|length }} AWTRIX device(s) - {{ alerts|length }} alert(s) - Mode: {{ display_mode }}"
+      message: "DPC Alert test notification sent to {{ devices_topics|length }} AWTRIX device(s) - {{ active_test_alerts|length }} alert(s) - Mode: {{ display_mode }}"
       level: info
