@@ -25,7 +25,7 @@ blueprint:
     - Test each risk type independently (hydraulic, storm, hydrogeological)\n\n
     - Test multiple alerts simultaneously\n\n
     - Compact app format: \"IDR3-TMP4\" (all alerts on one screen)\n\n
-    - Detailed notification format: Full scrolling text (sent individually)\n\n
+    - Detailed notification format: Full scrolling text (array of notifications)\n\n
     - All 4 criticality levels with proper color coding\n\n
     - Configurable rainbow text effect (minimum level threshold)\n\n
     - Choose display mode: Custom App, Notification, or Both\n\n
@@ -348,8 +348,8 @@ variables:
       {}
     {%- endif %}
 
-  # Build notification payloads as list (will be sent individually)
-  notification_list: |
+  # Build notification payload as array
+  notification_payload: |
     {%- set ns = namespace(notifs=[]) %}
     
     {%- if test_level_idraulico > 0 %}
@@ -421,7 +421,11 @@ variables:
       {%- set ns.notifs = ns.notifs + [notif_obj] %}
     {%- endif %}
     
-    {{ ns.notifs }}
+    {%- if ns.notifs|length > 0 %}
+      {{ ns.notifs|tojson }}
+    {%- else %}
+      {}
+    {%- endif %}
 
 trigger: []
 
@@ -457,26 +461,19 @@ action:
                     payload: "{{ app_payload }}"
 
   # Send AWTRIX notifications if mode is 'notification' or 'both'
-  # Notifications must be sent individually, not as array
   - if:
       - condition: template
-        value_template: "{{ display_mode in ['notification', 'both'] and notification_list|length > 0 }}"
+        value_template: "{{ display_mode in ['notification', 'both'] and notification_payload != '{}' }}"
     then:
       - repeat:
-          for_each: "{{ notification_list }}"
+          for_each: "{{ notify_topics }}"
           sequence:
-            - repeat:
-                for_each: "{{ notify_topics }}"
-                sequence:
-                  - service: mqtt.publish
-                    data:
-                      qos: 0
-                      retain: false
-                      topic: "{{ repeat.item }}"
-                      payload: "{{ notification_list[repeat.index - 1]|tojson }}"
-            # Small delay between different alert types
-            - delay:
-                milliseconds: 200
+            - service: mqtt.publish
+              data:
+                qos: 0
+                retain: false
+                topic: "{{ repeat.item }}"
+                payload: "{{ notification_payload }}"
 
   - service: system_log.write
     data:
