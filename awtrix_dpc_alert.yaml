@@ -298,7 +298,7 @@ variables:
         {%- set duration_value = message_duration if display_mode == 'app' else notification_duration %}
         {%- set alert_obj = {
           'icon': icon,
-          'text': alert ~ ' - ' ~ zone,
+          'text': alert ~ ' - ' ~ risk,
           'duration': duration_value,
           'stack': false,
           'overlay': 'clear'
