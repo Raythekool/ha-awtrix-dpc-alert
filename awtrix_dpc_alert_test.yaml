@@ -463,21 +463,20 @@ action:
         value_template: "{{ display_mode in ['notification', 'both'] and notification_list|length > 0 }}"
     then:
       - repeat:
-          for_each: "{{ notify_topics }}"
+          for_each: "{{ notification_list }}"
           sequence:
-            # Send each notification individually
             - repeat:
-                for_each: "{{ notification_list }}"
+                for_each: "{{ notify_topics }}"
                 sequence:
                   - service: mqtt.publish
                     data:
                       qos: 0
                       retain: false
-                      topic: "{{ notify_topics[0] }}"
-                      payload: "{{ repeat.item|tojson }}"
-                  # Small delay between notifications
-                  - delay:
-                      milliseconds: 100
+                      topic: "{{ repeat.item }}"
+                      payload: "{{ notification_list[repeat.index - 1]|tojson }}"
+            # Small delay between different alert types
+            - delay:
+                milliseconds: 200
 
   - service: system_log.write
     data:
