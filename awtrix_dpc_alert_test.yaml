@@ -9,7 +9,7 @@ blueprint:
     - Test different criticality levels (1-4) with accurate colors and effects\n\n
     - Validate sound notifications at different thresholds\n\n
     - Test both Custom App (persistent) and Notification (temporary) display modes\n\n
-    - Confirm rainbow text and ripple effects work as configured\n\n
+    - Confirm rainbow text effects work as configured\n\n
     - Ensure MQTT communication is functioning correctly\n\n\n
     ## 📝 How to Use\n\n
     1. Create automation from this blueprint\n\n
@@ -22,11 +22,10 @@ blueprint:
     ## ✨ Features\n\n
     - Test all 4 criticality levels with proper color coding\n\n
     - Configurable rainbow text effect (minimum level threshold)\n\n
-    - Configurable ripple background effect (minimum level threshold)\n\n
     - Choose display mode: Custom App, Notification, or Both\n\n
     - Separate durations for custom apps and notifications\n\n
     - Hold mode support (notification duration = 0)\n\n
-    - Optional sound notifications with level threshold\n\n
+    - Optional sound notifications\n\n
     - Test payload visible in trace for debugging"
   domain: automation
   input:
@@ -117,22 +116,6 @@ blueprint:
           step: 1
       default: 0
 
-    ripple_level:
-      name: Minimum Level for Ripple Effect 〰️
-      description: |
-        Show ripple effect for alerts of this level or higher (0 = disabled):
-        1 = Green (Ordinary)
-        2 = Yellow (Moderate)
-        3 = Orange (High)
-        4 = Red (Extreme)
-      selector:
-        number:
-          min: 0
-          max: 4
-          mode: box
-          step: 1
-      default: 3
-
     display_mode:
       name: Display Mode 📺
       description: |
@@ -163,7 +146,6 @@ variables:
   enable_sound: !input enable_sound
   sound_file: !input sound_file
   rainbow_level: !input rainbow_level
-  ripple_level: !input ripple_level
   display_mode: !input display_mode
 
   devices_topics: |
@@ -208,8 +190,7 @@ variables:
     {%- set alert_obj = {
       'text': 'TEST DPC Alert - Livello ' ~ level_names[test_level],
       'icon': icon_test,
-      'stack': false,
-      'overlay': 'clear'
+      'stack': false
     } %}
     
     {#- Only set color if rainbow is not active -#}
@@ -219,10 +200,6 @@ variables:
     
     {%- if rainbow_level > 0 and test_level >= rainbow_level %}
       {%- set alert_obj = dict(alert_obj, rainbow=true) %}
-    {%- endif %}
-    
-    {%- if ripple_level > 0 and test_level >= ripple_level %}
-      {%- set alert_obj = dict(alert_obj, effect='Ripple') %}
     {%- endif %}
     
     {%- if duration_value > 0 %}
