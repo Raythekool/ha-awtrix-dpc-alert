@@ -283,66 +283,47 @@ variables:
     temporali: "Temporali"
     idrogeologico: "Idrogeologico"
 
-  # Risk abbreviations for compact display
-  risk_abbr:
-    idraulico: "IDR"
-    temporali: "TMP"
-    idrogeologico: "IDG"
-
-  # Collect active test alerts data
-  active_test_alerts: |
-    {%- set ns = namespace(alerts=[]) %}
-    
-    {# Hydraulic risk test #}
-    {%- if test_level_idraulico > 0 %}
-      {%- set alert_data = {
-        'level': test_level_idraulico,
-        'risk_type': 'idraulico',
-        'risk_name': risk_names.idraulico,
-        'icon': icon_idraulico
-      } %}
-      {%- set ns.alerts = ns.alerts + [alert_data] %}
-    {%- endif %}
-    
-    {# Storm risk test #}
-    {%- if test_level_temporali > 0 %}
-      {%- set alert_data = {
-        'level': test_level_temporali,
-        'risk_type': 'temporali',
-        'risk_name': risk_names.temporali,
-        'icon': icon_temporali
-      } %}
-      {%- set ns.alerts = ns.alerts + [alert_data] %}
-    {%- endif %}
-    
-    {# Hydrogeological risk test #}
-    {%- if test_level_idrogeologico > 0 %}
-      {%- set alert_data = {
-        'level': test_level_idrogeologico,
-        'risk_type': 'idrogeologico',
-        'risk_name': risk_names.idrogeologico,
-        'icon': icon_idrogeologico
-      } %}
-      {%- set ns.alerts = ns.alerts + [alert_data] %}
-    {%- endif %}
-    
-    {{ ns.alerts }}
-
   # Build compact payload for Custom App (single screen)
   app_payload: |
-    {%- set alert_list = active_test_alerts %}
-    {%- if alert_list|length > 0 %}
-      {%- set max_level = alert_list | map(attribute='level') | max %}
-      {%- set compact_parts = [] %}
-      {%- for alert in alert_list %}
-        {%- set abbr = risk_abbr.get(alert.risk_type, 'TST') %}
-        {%- set compact_parts = compact_parts + [abbr ~ alert.level|string] %}
-      {%- endfor %}
-      {%- set compact_text = compact_parts | join('-') %}
+    {%- set ns = namespace(parts=[], max_level=0, first_icon='') %}
+    
+    {# Build compact text from active alerts #}
+    {%- if test_level_idraulico > 0 %}
+      {%- set ns.parts = ns.parts + ['IDR' ~ test_level_idraulico|string] %}
+      {%- if test_level_idraulico > ns.max_level %}
+        {%- set ns.max_level = test_level_idraulico %}
+      {%- endif %}
+      {%- if ns.first_icon == '' %}
+        {%- set ns.first_icon = icon_idraulico %}
+      {%- endif %}
+    {%- endif %}
+    
+    {%- if test_level_temporali > 0 %}
+      {%- set ns.parts = ns.parts + ['TMP' ~ test_level_temporali|string] %}
+      {%- if test_level_temporali > ns.max_level %}
+        {%- set ns.max_level = test_level_temporali %}
+      {%- endif %}
+      {%- if ns.first_icon == '' %}
+        {%- set ns.first_icon = icon_temporali %}
+      {%- endif %}
+    {%- endif %}
+    
+    {%- if test_level_idrogeologico > 0 %}
+      {%- set ns.parts = ns.parts + ['IDG' ~ test_level_idrogeologico|string] %}
+      {%- if test_level_idrogeologico > ns.max_level %}
+        {%- set ns.max_level = test_level_idrogeologico %}
+      {%- endif %}
+      {%- if ns.first_icon == '' %}
+        {%- set ns.first_icon = icon_idrogeologico %}
+      {%- endif %}
+    {%- endif %}
+    
+    {%- if ns.parts|length > 0 %}
+      {%- set compact_text = ns.parts | join('-') %}
       
       {%- set app_obj = {
         'text': compact_text,
-        'icon': alert_list[0].icon,
+        'icon': ns.first_icon,
         'stack': false
       } %}
       
@@ -350,15 +331,15 @@ variables:
         {%- set app_obj = dict(app_obj, duration=message_duration) %}
       {%- endif %}
       
-      {%- if rainbow_level == 0 or max_level < rainbow_level %}
-        {%- set app_obj = dict(app_obj, color=color_map[max_level]) %}
+      {%- if rainbow_level == 0 or ns.max_level < rainbow_level %}
+        {%- set app_obj = dict(app_obj, color=color_map[ns.max_level]) %}
       {%- endif %}
       
-      {%- if rainbow_level > 0 and max_level >= rainbow_level %}
+      {%- if rainbow_level > 0 and ns.max_level >= rainbow_level %}
         {%- set app_obj = dict(app_obj, rainbow=true) %}
       {%- endif %}
       
-      {%- if enable_sound and max_level >= sound_level %}
+      {%- if enable_sound and ns.max_level >= sound_level %}
         {%- set app_obj = dict(app_obj, sound=sound_file) %}
       {%- endif %}
       
@@ -369,37 +350,78 @@ variables:
 
   # Build detailed payload for Notifications (full text, array)
   notification_payload: |
-    {%- set alert_list = active_test_alerts %}
-    {%- if alert_list|length > 0 %}
-      {%- set ns = namespace(notifs=[]) %}
-      {%- for alert in alert_list %}
-        {%- set notif_obj = {
-          'icon': alert.icon,
-          'text': 'TEST Rischio ' ~ alert.risk_name ~ ' - Livello ' ~ level_names[alert.level],
-          'stack': false
-        } %}
-        
-        {%- if notification_duration > 0 %}
-          {%- set notif_obj = dict(notif_obj, duration=notification_duration) %}
-        {%- else %}
-          {%- set notif_obj = dict(notif_obj, hold=true) %}
-        {%- endif %}
-        
-        {%- if rainbow_level == 0 or alert.level < rainbow_level %}
-          {%- set notif_obj = dict(notif_obj, color=color_map[alert.level]) %}
-        {%- endif %}
-        
-        {%- if rainbow_level > 0 and alert.level >= rainbow_level %}
-          {%- set notif_obj = dict(notif_obj, rainbow=true) %}
-        {%- endif %}
-        
-        {%- if enable_sound and alert.level >= sound_level %}
-          {%- set notif_obj = dict(notif_obj, sound=sound_file) %}
-        {%- endif %}
-        
-        {%- set ns.notifs = ns.notifs + [notif_obj] %}
-      {%- endfor %}
-      
+    {%- set ns = namespace(notifs=[]) %}
+    
+    {%- if test_level_idraulico > 0 %}
+      {%- set notif_obj = {
+        'icon': icon_idraulico,
+        'text': 'TEST Rischio Idraulico - Livello ' ~ level_names[test_level_idraulico],
+        'stack': false
+      } %}
+      {%- if notification_duration > 0 %}
+        {%- set notif_obj = dict(notif_obj, duration=notification_duration) %}
+      {%- else %}
+        {%- set notif_obj = dict(notif_obj, hold=true) %}
+      {%- endif %}
+      {%- if rainbow_level == 0 or test_level_idraulico < rainbow_level %}
+        {%- set notif_obj = dict(notif_obj, color=color_map[test_level_idraulico]) %}
+      {%- endif %}
+      {%- if rainbow_level > 0 and test_level_idraulico >= rainbow_level %}
+        {%- set notif_obj = dict(notif_obj, rainbow=true) %}
+      {%- endif %}
+      {%- if enable_sound and test_level_idraulico >= sound_level %}
+        {%- set notif_obj = dict(notif_obj, sound=sound_file) %}
+      {%- endif %}
+      {%- set ns.notifs = ns.notifs + [notif_obj] %}
+    {%- endif %}
+    
+    {%- if test_level_temporali > 0 %}
+      {%- set notif_obj = {
+        'icon': icon_temporali,
+        'text': 'TEST Rischio Temporali - Livello ' ~ level_names[test_level_temporali],
+        'stack': false
+      } %}
+      {%- if notification_duration > 0 %}
+        {%- set notif_obj = dict(notif_obj, duration=notification_duration) %}
+      {%- else %}
+        {%- set notif_obj = dict(notif_obj, hold=true) %}
+      {%- endif %}
+      {%- if rainbow_level == 0 or test_level_temporali < rainbow_level %}
+        {%- set notif_obj = dict(notif_obj, color=color_map[test_level_temporali]) %}
+      {%- endif %}
+      {%- if rainbow_level > 0 and test_level_temporali >= rainbow_level %}
+        {%- set notif_obj = dict(notif_obj, rainbow=true) %}
+      {%- endif %}
+      {%- if enable_sound and test_level_temporali >= sound_level %}
+        {%- set notif_obj = dict(notif_obj, sound=sound_file) %}
+      {%- endif %}
+      {%- set ns.notifs = ns.notifs + [notif_obj] %}
+    {%- endif %}
+    
+    {%- if test_level_idrogeologico > 0 %}
+      {%- set notif_obj = {
+        'icon': icon_idrogeologico,
+        'text': 'TEST Rischio Idrogeologico - Livello ' ~ level_names[test_level_idrogeologico],
+        'stack': false
+      } %}
+      {%- if notification_duration > 0 %}
+        {%- set notif_obj = dict(notif_obj, duration=notification_duration) %}
+      {%- else %}
+        {%- set notif_obj = dict(notif_obj, hold=true) %}
+      {%- endif %}
+      {%- if rainbow_level == 0 or test_level_idrogeologico < rainbow_level %}
+        {%- set notif_obj = dict(notif_obj, color=color_map[test_level_idrogeologico]) %}
+      {%- endif %}
+      {%- if rainbow_level > 0 and test_level_idrogeologico >= rainbow_level %}
+        {%- set notif_obj = dict(notif_obj, rainbow=true) %}
+      {%- endif %}
+      {%- if enable_sound and test_level_idrogeologico >= sound_level %}
+        {%- set notif_obj = dict(notif_obj, sound=sound_file) %}
+      {%- endif %}
+      {%- set ns.notifs = ns.notifs + [notif_obj] %}
+    {%- endif %}
+    
+    {%- if ns.notifs|length > 0 %}
       {%- if ns.notifs|length == 1 %}
         {{ ns.notifs[0]|tojson }}
       {%- else %}
@@ -433,7 +455,7 @@ action:
             # Publish compact app (if alerts present)
             - if:
                 - condition: template
-                  value_template: "{{ active_test_alerts|length > 0 }}"
+                  value_template: "{{ app_payload != '{}' }}"
               then:
                 - service: mqtt.publish
                   data:
@@ -445,7 +467,7 @@ action:
   # Send AWTRIX notification if mode is 'notification' or 'both'
   - if:
       - condition: template
-        value_template: "{{ display_mode in ['notification', 'both'] and active_test_alerts|length > 0 }}"
+        value_template: "{{ display_mode in ['notification', 'both'] and notification_payload != '{}' }}"
     then:
       - repeat:
           for_each: "{{ notify_topics }}"
@@ -459,5 +481,5 @@ action:
 
   - service: system_log.write
     data:
-      message: "DPC Alert test notification sent to {{ devices_topics|length }} AWTRIX device(s) - {{ active_test_alerts|length }} alert(s) - Mode: {{ display_mode }}"
+      message: "DPC Alert test notification sent to {{ devices_topics|length }} AWTRIX device(s) - Mode: {{ display_mode }}"
       level: info
