@@ -25,7 +25,7 @@ blueprint:
     - Test each risk type independently (hydraulic, storm, hydrogeological)\n\n
     - Test multiple alerts simultaneously\n\n
     - Compact app format: \"IDR3-TMP4\" (all alerts on one screen)\n\n
-    - Detailed notification format: Full scrolling text\n\n
+    - Detailed notification format: Full scrolling text (sent individually)\n\n
     - All 4 criticality levels with proper color coding\n\n
     - Configurable rainbow text effect (minimum level threshold)\n\n
     - Choose display mode: Custom App, Notification, or Both\n\n
@@ -118,7 +118,7 @@ blueprint:
           unit_of_measurement: sec
           step: 1
           mode: slider
-      default: 0
+      default: 10
 
     icon_idraulico:
       name: Hydraulic Risk Icon
@@ -348,8 +348,8 @@ variables:
       {}
     {%- endif %}
 
-  # Build detailed payload for Notifications (full text, array)
-  notification_payload: |
+  # Build notification payloads as list (will be sent individually)
+  notification_list: |
     {%- set ns = namespace(notifs=[]) %}
     
     {%- if test_level_idraulico > 0 %}
@@ -421,15 +421,7 @@ variables:
       {%- set ns.notifs = ns.notifs + [notif_obj] %}
     {%- endif %}
     
-    {%- if ns.notifs|length > 0 %}
-      {%- if ns.notifs|length == 1 %}
-        {{ ns.notifs[0]|tojson }}
-      {%- else %}
-        {{ ns.notifs|tojson }}
-      {%- endif %}
-    {%- else %}
-      {}
-    {%- endif %}
+    {{ ns.notifs }}
 
 trigger: []
 
@@ -444,7 +436,7 @@ action:
       - repeat:
           for_each: "{{ devices_topics }}"
           sequence:
-            # Remove previous app (same as main blueprint)
+            # Remove previous app
             - service: mqtt.publish
               data:
                 qos: 0
@@ -464,20 +456,28 @@ action:
                     topic: "{{ repeat.item }}"
                     payload: "{{ app_payload }}"
 
-  # Send AWTRIX notification if mode is 'notification' or 'both'
+  # Send AWTRIX notifications if mode is 'notification' or 'both'
+  # Notifications must be sent individually, not as array
   - if:
       - condition: template
-        value_template: "{{ display_mode in ['notification', 'both'] and notification_payload != '{}' }}"
+        value_template: "{{ display_mode in ['notification', 'both'] and notification_list|length > 0 }}"
     then:
       - repeat:
           for_each: "{{ notify_topics }}"
           sequence:
-            - service: mqtt.publish
-              data:
-                qos: 0
-                retain: false
-                topic: "{{ repeat.item }}"
-                payload: "{{ notification_payload }}"
+            # Send each notification individually
+            - repeat:
+                for_each: "{{ notification_list }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      qos: 0
+                      retain: false
+                      topic: "{{ notify_topics[0] }}"
+                      payload: "{{ repeat.item|tojson }}"
+                  # Small delay between notifications
+                  - delay:
+                      milliseconds: 100
 
   - service: system_log.write
     data:
