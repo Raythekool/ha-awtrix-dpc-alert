@@ -25,7 +25,7 @@ blueprint:
     - Test each risk type independently (hydraulic, storm, hydrogeological)\n\n
     - Test multiple alerts simultaneously\n\n
     - Compact app format: \"IDR3-TMP4\" (all alerts on one screen)\n\n
-    - Detailed notification format: Full scrolling text (array of notifications)\n\n
+    - Detailed notification format: Full scrolling text (sent individually)\n\n
     - All 4 criticality levels with proper color coding\n\n
     - Configurable rainbow text effect (minimum level threshold)\n\n
     - Choose display mode: Custom App, Notification, or Both\n\n
@@ -348,85 +348,6 @@ variables:
       {}
     {%- endif %}
 
-  # Build notification payload as array
-  notification_payload: |
-    {%- set ns = namespace(notifs=[]) %}
-    
-    {%- if test_level_idraulico > 0 %}
-      {%- set notif_obj = {
-        'icon': icon_idraulico,
-        'text': 'TEST Rischio Idraulico - Livello ' ~ level_names[test_level_idraulico],
-        'stack': false
-      } %}
-      {%- if notification_duration > 0 %}
-        {%- set notif_obj = dict(notif_obj, duration=notification_duration) %}
-      {%- else %}
-        {%- set notif_obj = dict(notif_obj, hold=true) %}
-      {%- endif %}
-      {%- if rainbow_level == 0 or test_level_idraulico < rainbow_level %}
-        {%- set notif_obj = dict(notif_obj, color=color_map[test_level_idraulico]) %}
-      {%- endif %}
-      {%- if rainbow_level > 0 and test_level_idraulico >= rainbow_level %}
-        {%- set notif_obj = dict(notif_obj, rainbow=true) %}
-      {%- endif %}
-      {%- if enable_sound and test_level_idraulico >= sound_level %}
-        {%- set notif_obj = dict(notif_obj, sound=sound_file) %}
-      {%- endif %}
-      {%- set ns.notifs = ns.notifs + [notif_obj] %}
-    {%- endif %}
-    
-    {%- if test_level_temporali > 0 %}
-      {%- set notif_obj = {
-        'icon': icon_temporali,
-        'text': 'TEST Rischio Temporali - Livello ' ~ level_names[test_level_temporali],
-        'stack': false
-      } %}
-      {%- if notification_duration > 0 %}
-        {%- set notif_obj = dict(notif_obj, duration=notification_duration) %}
-      {%- else %}
-        {%- set notif_obj = dict(notif_obj, hold=true) %}
-      {%- endif %}
-      {%- if rainbow_level == 0 or test_level_temporali < rainbow_level %}
-        {%- set notif_obj = dict(notif_obj, color=color_map[test_level_temporali]) %}
-      {%- endif %}
-      {%- if rainbow_level > 0 and test_level_temporali >= rainbow_level %}
-        {%- set notif_obj = dict(notif_obj, rainbow=true) %}
-      {%- endif %}
-      {%- if enable_sound and test_level_temporali >= sound_level %}
-        {%- set notif_obj = dict(notif_obj, sound=sound_file) %}
-      {%- endif %}
-      {%- set ns.notifs = ns.notifs + [notif_obj] %}
-    {%- endif %}
-    
-    {%- if test_level_idrogeologico > 0 %}
-      {%- set notif_obj = {
-        'icon': icon_idrogeologico,
-        'text': 'TEST Rischio Idrogeologico - Livello ' ~ level_names[test_level_idrogeologico],
-        'stack': false
-      } %}
-      {%- if notification_duration > 0 %}
-        {%- set notif_obj = dict(notif_obj, duration=notification_duration) %}
-      {%- else %}
-        {%- set notif_obj = dict(notif_obj, hold=true) %}
-      {%- endif %}
-      {%- if rainbow_level == 0 or test_level_idrogeologico < rainbow_level %}
-        {%- set notif_obj = dict(notif_obj, color=color_map[test_level_idrogeologico]) %}
-      {%- endif %}
-      {%- if rainbow_level > 0 and test_level_idrogeologico >= rainbow_level %}
-        {%- set notif_obj = dict(notif_obj, rainbow=true) %}
-      {%- endif %}
-      {%- if enable_sound and test_level_idrogeologico >= sound_level %}
-        {%- set notif_obj = dict(notif_obj, sound=sound_file) %}
-      {%- endif %}
-      {%- set ns.notifs = ns.notifs + [notif_obj] %}
-    {%- endif %}
-    
-    {%- if ns.notifs|length > 0 %}
-      {{ ns.notifs|tojson }}
-    {%- else %}
-      {}
-    {%- endif %}
-
 trigger: []
 
 condition: []
@@ -460,20 +381,113 @@ action:
                     topic: "{{ repeat.item }}"
                     payload: "{{ app_payload }}"
 
-  # Send AWTRIX notifications if mode is 'notification' or 'both'
+  # Send AWTRIX notifications individually (arrays don't work in practice)
   - if:
       - condition: template
-        value_template: "{{ display_mode in ['notification', 'both'] and notification_payload != '{}' }}"
+        value_template: "{{ display_mode in ['notification', 'both'] }}"
     then:
       - repeat:
           for_each: "{{ notify_topics }}"
           sequence:
-            - service: mqtt.publish
-              data:
-                qos: 0
-                retain: false
-                topic: "{{ repeat.item }}"
-                payload: "{{ notification_payload }}"
+            # Idraulico notification
+            - if:
+                - condition: template
+                  value_template: "{{ test_level_idraulico > 0 }}"
+              then:
+                - service: mqtt.publish
+                  data:
+                    qos: 0
+                    retain: false
+                    topic: "{{ repeat.item }}"
+                    payload: >-
+                      {%- set notif = {
+                        'icon': icon_idraulico,
+                        'text': 'TEST Rischio Idraulico - Livello ' ~ level_names[test_level_idraulico],
+                        'stack': false
+                      } %}
+                      {%- if notification_duration > 0 %}
+                        {%- set notif = dict(notif, duration=notification_duration) %}
+                      {%- else %}
+                        {%- set notif = dict(notif, hold=true) %}
+                      {%- endif %}
+                      {%- if rainbow_level == 0 or test_level_idraulico < rainbow_level %}
+                        {%- set notif = dict(notif, color=color_map[test_level_idraulico]) %}
+                      {%- endif %}
+                      {%- if rainbow_level > 0 and test_level_idraulico >= rainbow_level %}
+                        {%- set notif = dict(notif, rainbow=true) %}
+                      {%- endif %}
+                      {%- if enable_sound and test_level_idraulico >= sound_level %}
+                        {%- set notif = dict(notif, sound=sound_file) %}
+                      {%- endif %}
+                      {{ notif|tojson }}
+                - delay:
+                    milliseconds: 100
+
+            # Temporali notification
+            - if:
+                - condition: template
+                  value_template: "{{ test_level_temporali > 0 }}"
+              then:
+                - service: mqtt.publish
+                  data:
+                    qos: 0
+                    retain: false
+                    topic: "{{ repeat.item }}"
+                    payload: >-
+                      {%- set notif = {
+                        'icon': icon_temporali,
+                        'text': 'TEST Rischio Temporali - Livello ' ~ level_names[test_level_temporali],
+                        'stack': false
+                      } %}
+                      {%- if notification_duration > 0 %}
+                        {%- set notif = dict(notif, duration=notification_duration) %}
+                      {%- else %}
+                        {%- set notif = dict(notif, hold=true) %}
+                      {%- endif %}
+                      {%- if rainbow_level == 0 or test_level_temporali < rainbow_level %}
+                        {%- set notif = dict(notif, color=color_map[test_level_temporali]) %}
+                      {%- endif %}
+                      {%- if rainbow_level > 0 and test_level_temporali >= rainbow_level %}
+                        {%- set notif = dict(notif, rainbow=true) %}
+                      {%- endif %}
+                      {%- if enable_sound and test_level_temporali >= sound_level %}
+                        {%- set notif = dict(notif, sound=sound_file) %}
+                      {%- endif %}
+                      {{ notif|tojson }}
+                - delay:
+                    milliseconds: 100
+
+            # Idrogeologico notification
+            - if:
+                - condition: template
+                  value_template: "{{ test_level_idrogeologico > 0 }}"
+              then:
+                - service: mqtt.publish
+                  data:
+                    qos: 0
+                    retain: false
+                    topic: "{{ repeat.item }}"
+                    payload: >-
+                      {%- set notif = {
+                        'icon': icon_idrogeologico,
+                        'text': 'TEST Rischio Idrogeologico - Livello ' ~ level_names[test_level_idrogeologico],
+                        'stack': false
+                      } %}
+                      {%- if notification_duration > 0 %}
+                        {%- set notif = dict(notif, duration=notification_duration) %}
+                      {%- else %}
+                        {%- set notif = dict(notif, hold=true) %}
+                      {%- endif %}
+                      {%- if rainbow_level == 0 or test_level_idrogeologico < rainbow_level %}
+                        {%- set notif = dict(notif, color=color_map[test_level_idrogeologico]) %}
+                      {%- endif %}
+                      {%- if rainbow_level > 0 and test_level_idrogeologico >= rainbow_level %}
+                        {%- set notif = dict(notif, rainbow=true) %}
+                      {%- endif %}
+                      {%- if enable_sound and test_level_idrogeologico >= sound_level %}
+                        {%- set notif = dict(notif, sound=sound_file) %}
+                      {%- endif %}
+                      {{ notif|tojson }}
 
   - service: system_log.write
     data:
