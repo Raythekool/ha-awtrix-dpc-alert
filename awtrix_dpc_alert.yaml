@@ -12,7 +12,8 @@ blueprint:
     - **Multi-sensor monitoring**: Track multiple DPC sensors simultaneously\n
     - **Criticality filtering**: Show only alerts above configurable threshold (0-4)\n
     - **Automatic color coding**: Vivid colors based on alert level (Blue/Green/Yellow/Orange/Red)\n
-    - **Compact display format**: Shows abbreviated alerts (e.g. \"IDR3-TMP4\") for both apps and notifications\n
+    - **Compact display format**: Shows abbreviated alerts (e.g. \"idro3-temporali4\") for apps\n
+    - **Full name notifications**: Triggered sensor shows full alert name in notifications\n
     - **Rainbow text effect**: Optional colorful animation for high-severity alerts\n
     - **Sound notifications**: Optional audio alerts with minimum level threshold\n
     - **Flexible display modes**: Choose Custom App (persistent), Notification (temporary), or Both\n
@@ -20,10 +21,11 @@ blueprint:
     - **Multi-device support**: Send to multiple AWTRIX devices simultaneously\n
     - **Test mode**: Manually trigger test alerts without waiting for real DPC data\n\n
     ## 📺 DISPLAY FORMAT\n
-    Both Custom App and Notification use compact format: **IDR3-TMP4** (all alerts on one screen)\n
-    - **IDR** = Rischio Idraulico (Hydraulic)\n
-    - **TMP** = Rischio Temporali (Storm)\n
-    - **IDG** = Rischio Idrogeologico (Hydrogeological)\n
+    - **Custom App**: Compact format with all alerts (e.g. \"idro3-temporali4\")\n
+    - **Notification**: Full name of triggered alert only (e.g. \"Allerta Idraulico - Toscana\")\n
+    - **idro** = Rischio Idraulico (Hydraulic)\n
+    - **temporali** = Rischio Temporali (Storm)\n
+    - **idrogeo** = Rischio Idrogeologico (Hydrogeological)\n
     - Number = criticality level (1-4)\n
     Color is based on highest alert level present.\n\n
     ## 📦 RECOMMENDED ICON\n
@@ -33,7 +35,8 @@ blueprint:
     See [Icons Upload Guide](https://github.com/Raythekool/ha-awtrix-dpc-alert/blob/main/ICONS_UPLOAD.md) for automated upload script.\n\n
     ## ⚙️ CONFIGURATION OPTIONS\n
     - **Alert Level Threshold**: Filter by minimum criticality (0-4)\n
-    - **Display Durations**: Separate controls for custom apps and notifications\n
+    - **Repeat Count**: Number of times to show the custom app\n
+    - **Notification Duration**: How long notifications stay visible\n
     - **Rainbow Text Level**: Enable rainbow animation at specified level (0=disabled)\n
     - **Sound Settings**: Optional audio with minimum level threshold\n
     - **Display Mode**: Custom App (stays visible), Notification (temporary pop-up), or Both\n
@@ -83,17 +86,16 @@ blueprint:
           step: 1
       default: 1
 
-    message_duration:
-      name: Message Duration ⏱️
-      description: How long the message should stay on screen (in seconds). 0 = use global time
+    repeat_count:
+      name: Repeat Count 🔁
+      description: Number of times to display the custom app (0 = display once without repeat)
       selector:
         number:
           min: 0
-          max: 300
-          unit_of_measurement: sec
+          max: 100
           step: 1
           mode: slider
-      default: 20
+      default: 5
 
     notification_duration:
       name: Notification Duration 🔔
@@ -168,8 +170,8 @@ blueprint:
       name: Display Mode 📺
       description: |
         Choose how to display alerts on AWTRIX:
-        - Custom App: Persistent compact display (e.g. "IDR3-TMP4")
-        - Notification: Temporary compact pop-up (e.g. "IDR3-TMP4")
+        - Custom App: Persistent compact display (e.g. "idro3-temporali4")
+        - Notification: Temporary pop-up with full alert name
         - Both: Persistent app + temporary notification
       selector:
         select:
@@ -255,7 +257,7 @@ variables:
 
   dpc_sensors: !input dpc_sensors
   warning_level: !input warning_level
-  message_duration: !input message_duration
+  repeat_count: !input repeat_count
   notification_duration: !input notification_duration
   icon_warning: !input icon_warning
   enable_sound: !input enable_sound
@@ -284,34 +286,36 @@ variables:
     3: "Elevata"
     4: "Estrema"
 
-  # Risk abbreviations for compact display
+  # Risk abbreviations for compact display (longer names)
   risk_abbr:
-    idraulico: "IDR"
-    temporali: "TMP"
-    idrogeologico: "IDG"
+    idraulico: "idro"
+    temporali: "temporali"
+    idrogeologico: "idrogeo"
 
-  # Unified compact payload for both app and notification
+  # Unified compact payload for custom app
   compact_payload: |
     {%- set ns = namespace(parts=[], max_level=0) %}
+    {%- set test_prefix = '' %}
     
     {%- if enable_test_mode %}
+      {%- set test_prefix = 'TEST ' %}
       {# TEST MODE: Use test levels #}
       {%- if test_level_idraulico > 0 %}
-        {%- set ns.parts = ns.parts + ['IDR' ~ test_level_idraulico|string] %}
+        {%- set ns.parts = ns.parts + ['idro' ~ test_level_idraulico|string] %}
         {%- if test_level_idraulico > ns.max_level %}
           {%- set ns.max_level = test_level_idraulico %}
         {%- endif %}
       {%- endif %}
       
       {%- if test_level_temporali > 0 %}
-        {%- set ns.parts = ns.parts + ['TMP' ~ test_level_temporali|string] %}
+        {%- set ns.parts = ns.parts + ['temporali' ~ test_level_temporali|string] %}
         {%- if test_level_temporali > ns.max_level %}
           {%- set ns.max_level = test_level_temporali %}
         {%- endif %}
       {%- endif %}
       
       {%- if test_level_idrogeologico > 0 %}
-        {%- set ns.parts = ns.parts + ['IDG' ~ test_level_idrogeologico|string] %}
+        {%- set ns.parts = ns.parts + ['idrogeo' ~ test_level_idrogeologico|string] %}
         {%- if test_level_idrogeologico > ns.max_level %}
           {%- set ns.max_level = test_level_idrogeologico %}
         {%- endif %}
@@ -323,14 +327,14 @@ variables:
           {%- set level = state_attr(sensor, 'level')|int(0) %}
           {%- set risk = state_attr(sensor, 'risk') %}
           
-          {%- set abbr = 'ALL' %}
+          {%- set abbr = 'alert' %}
           
           {%- if 'idraulico' in risk|lower %}
-            {%- set abbr = 'IDR' %}
+            {%- set abbr = 'idro' %}
           {%- elif 'temporali' in risk|lower %}
-            {%- set abbr = 'TMP' %}
+            {%- set abbr = 'temporali' %}
           {%- elif 'idrogeologico' in risk|lower %}
-            {%- set abbr = 'IDG' %}
+            {%- set abbr = 'idrogeo' %}
           {%- endif %}
           
           {%- set ns.parts = ns.parts + [abbr ~ level|string] %}
@@ -342,13 +346,17 @@ variables:
     {%- endif %}
     
     {%- if ns.parts|length > 0 %}
-      {%- set compact_text = ns.parts | join('-') %}
+      {%- set compact_text = test_prefix ~ ns.parts | join('-') %}
       
       {%- set payload = {
         'text': compact_text,
         'icon': icon_warning,
         'stack': false
       } %}
+      
+      {%- if repeat_count > 0 %}
+        {%- set payload = dict(payload, repeat=repeat_count) %}
+      {%- endif %}
       
       {%- if rainbow_level == 0 or ns.max_level < rainbow_level %}
         {%- set payload = dict(payload, color=color_map[ns.max_level]) %}
@@ -359,6 +367,90 @@ variables:
       {%- endif %}
       
       {%- if enable_sound and ns.max_level >= sound_level %}
+        {%- set payload = dict(payload, sound=sound_file) %}
+      {%- endif %}
+      
+      {{ payload|tojson }}
+    {%- else %}
+      {}
+    {%- endif %}
+
+  # Notification payload - only triggered sensor with full name
+  notification_payload: |
+    {%- set triggered = trigger.entity_id if trigger is defined and trigger.entity_id is defined else '' %}
+    
+    {%- if enable_test_mode %}
+      {# TEST MODE: Show test notification #}
+      {%- set test_alerts = [] %}
+      {%- if test_level_idraulico > 0 %}
+        {%- set test_alerts = test_alerts + [{'text': 'TEST Allerta Idraulico Livello ' ~ test_level_idraulico, 'level': test_level_idraulico}] %}
+      {%- endif %}
+      {%- if test_level_temporali > 0 %}
+        {%- set test_alerts = test_alerts + [{'text': 'TEST Allerta Temporali Livello ' ~ test_level_temporali, 'level': test_level_temporali}] %}
+      {%- endif %}
+      {%- if test_level_idrogeologico > 0 %}
+        {%- set test_alerts = test_alerts + [{'text': 'TEST Allerta Idrogeologico Livello ' ~ test_level_idrogeologico, 'level': test_level_idrogeologico}] %}
+      {%- endif %}
+      
+      {%- if test_alerts|length > 0 %}
+        {%- set alert = test_alerts[0] %}
+        {%- set payload = {
+          'text': alert.text,
+          'icon': icon_warning,
+          'stack': false
+        } %}
+        
+        {%- if notification_duration > 0 %}
+          {%- set payload = dict(payload, duration=notification_duration) %}
+        {%- else %}
+          {%- set payload = dict(payload, hold=true) %}
+        {%- endif %}
+        
+        {%- if rainbow_level == 0 or alert.level < rainbow_level %}
+          {%- set payload = dict(payload, color=color_map[alert.level]) %}
+        {%- endif %}
+        
+        {%- if rainbow_level > 0 and alert.level >= rainbow_level %}
+          {%- set payload = dict(payload, rainbow=true) %}
+        {%- endif %}
+        
+        {%- if enable_sound and alert.level >= sound_level %}
+          {%- set payload = dict(payload, sound=sound_file) %}
+        {%- endif %}
+        
+        {{ payload|tojson }}
+      {%- else %}
+        {}
+      {%- endif %}
+    {%- elif triggered and is_state(triggered, 'on') and state_attr(triggered, 'level')|int(0) >= warning_level %}
+      {# REAL MODE: Show triggered sensor only #}
+      {%- set level = state_attr(triggered, 'level')|int(0) %}
+      {%- set alert_text = state_attr(triggered, 'alert') %}
+      {%- set risk = state_attr(triggered, 'risk') %}
+      
+      {%- set full_text = alert_text ~ ' - ' ~ risk %}
+      
+      {%- set payload = {
+        'text': full_text,
+        'icon': icon_warning,
+        'stack': false
+      } %}
+      
+      {%- if notification_duration > 0 %}
+        {%- set payload = dict(payload, duration=notification_duration) %}
+      {%- else %}
+        {%- set payload = dict(payload, hold=true) %}
+      {%- endif %}
+      
+      {%- if rainbow_level == 0 or level < rainbow_level %}
+        {%- set payload = dict(payload, color=color_map[level]) %}
+      {%- endif %}
+      
+      {%- if rainbow_level > 0 and level >= rainbow_level %}
+        {%- set payload = dict(payload, rainbow=true) %}
+      {%- endif %}
+      
+      {%- if enable_sound and level >= sound_level %}
         {%- set payload = dict(payload, sound=sound_file) %}
       {%- endif %}
       
@@ -401,17 +493,12 @@ action:
                     qos: 0
                     retain: false
                     topic: "{{ repeat.item }}"
-                    payload: >-
-                      {%- set payload_obj = compact_payload|from_json %}
-                      {%- if message_duration > 0 %}
-                        {%- set payload_obj = dict(payload_obj, duration=message_duration) %}
-                      {%- endif %}
-                      {{ payload_obj|tojson }}
+                    payload: "{{ compact_payload }}"
 
   # Send AWTRIX notification if mode is 'notification' or 'both'
   - if:
       - condition: template
-        value_template: "{{ display_mode in ['notification', 'both'] and compact_payload != '{}' }}"
+        value_template: "{{ display_mode in ['notification', 'both'] and notification_payload != '{}' }}"
     then:
       - repeat:
           for_each: "{{ notify_topics }}"
@@ -421,11 +508,4 @@ action:
                 qos: 0
                 retain: false
                 topic: "{{ repeat.item }}"
-                payload: >-
-                  {%- set payload_obj = compact_payload|from_json %}
-                  {%- if notification_duration > 0 %}
-                    {%- set payload_obj = dict(payload_obj, duration=notification_duration) %}
-                  {%- else %}
-                    {%- set payload_obj = dict(payload_obj, hold=true) %}
-                  {%- endif %}
-                  {{ payload_obj|tojson }}
+                payload: "{{ notification_payload }}"
