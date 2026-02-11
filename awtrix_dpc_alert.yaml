@@ -300,21 +300,21 @@ variables:
     {%- if enable_test_mode %}
       {%- set test_prefix = 'TEST ' %}
       {# TEST MODE: Use test levels #}
-      {%- if test_level_idraulico > 0 %}
+      {%- if test_level_idraulico >= warning_level %}
         {%- set ns.parts = ns.parts + ['idro' ~ test_level_idraulico|string] %}
         {%- if test_level_idraulico > ns.max_level %}
           {%- set ns.max_level = test_level_idraulico %}
         {%- endif %}
       {%- endif %}
       
-      {%- if test_level_temporali > 0 %}
+      {%- if test_level_temporali >= warning_level %}
         {%- set ns.parts = ns.parts + ['temporali' ~ test_level_temporali|string] %}
         {%- if test_level_temporali > ns.max_level %}
           {%- set ns.max_level = test_level_temporali %}
         {%- endif %}
       {%- endif %}
       
-      {%- if test_level_idrogeologico > 0 %}
+      {%- if test_level_idrogeologico >= warning_level %}
         {%- set ns.parts = ns.parts + ['idrogeo' ~ test_level_idrogeologico|string] %}
         {%- if test_level_idrogeologico > ns.max_level %}
           {%- set ns.max_level = test_level_idrogeologico %}
@@ -382,13 +382,13 @@ variables:
     {%- if enable_test_mode %}
       {# TEST MODE: Show test notification #}
       {%- set test_alerts = [] %}
-      {%- if test_level_idraulico > 0 %}
+      {%- if test_level_idraulico >= warning_level %}
         {%- set test_alerts = test_alerts + [{'text': 'TEST Allerta Idraulico Livello ' ~ test_level_idraulico, 'level': test_level_idraulico}] %}
       {%- endif %}
-      {%- if test_level_temporali > 0 %}
+      {%- if test_level_temporali >= warning_level %}
         {%- set test_alerts = test_alerts + [{'text': 'TEST Allerta Temporali Livello ' ~ test_level_temporali, 'level': test_level_temporali}] %}
       {%- endif %}
-      {%- if test_level_idrogeologico > 0 %}
+      {%- if test_level_idrogeologico >= warning_level %}
         {%- set test_alerts = test_alerts + [{'text': 'TEST Allerta Idrogeologico Livello ' ~ test_level_idrogeologico, 'level': test_level_idrogeologico}] %}
       {%- endif %}
       
